@@ -1,5 +1,6 @@
 package com.example.app.service;
 
+import com.example.app.controller.MainController;
 import org.apache.poi.xslf.usermodel.*;
 import org.apache.poi.sl.usermodel.TableCell.BorderEdge;
 import org.apache.poi.sl.usermodel.VerticalAlignment;
@@ -164,5 +165,30 @@ public class PowerPointExportService {
         cell.setBorderWidth(BorderEdge.top, 0.5);
         cell.setBorderWidth(BorderEdge.left, 0.5);
         cell.setBorderWidth(BorderEdge.right, 0.5);
+    }
+
+    // Add this method to PowerPointExportService.java
+    public void exportDashboardToPPTX(List<MainController.DashboardItem> dashboardItems, File outputFile) throws IOException {
+        try (XMLSlideShow ppt = new XMLSlideShow()) {
+            // Set slide size
+            ppt.setPageSize(new java.awt.Dimension(960, 540));
+
+            for (MainController.DashboardItem item : dashboardItems) {
+                // This is a simplified version - you can enhance it
+                XSLFSlide slide = ppt.createSlide();
+                XSLFTextShape titleShape = slide.createTextBox();
+                titleShape.setAnchor(new java.awt.geom.Rectangle2D.Double(50, 10, 860, 50));
+                titleShape.setText(item.getTitle());
+
+                // Placeholder for content - in a real scenario you'd capture and add charts/tables
+                XSLFTextShape contentShape = slide.createTextBox();
+                contentShape.setAnchor(new java.awt.geom.Rectangle2D.Double(50, 70, 860, 420));
+                contentShape.setText("Item: " + item.getTitle() + "\nType: " + item.getType());
+            }
+
+            try (FileOutputStream out = new FileOutputStream(outputFile)) {
+                ppt.write(out);
+            }
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.example.app.controller;
 
 import com.example.app.model.*;
 import com.example.app.service.*;
+import com.example.app.service.DashboardExportService;
 import com.example.app.service.GeographicValidationService.ValidationError;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -20,6 +21,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -86,6 +89,10 @@ public class MainController {
     @FXML private PieChart pieChart;
     @FXML private BarChart<String, Number> barChart;
 
+    // Dashboard fields
+    @FXML private VBox dashboardContainer;
+    @FXML private ScrollPane dashboardScrollPane;
+
     private final DynamicImportService importService = new DynamicImportService();
     private final PowerPointExportService exportService = new PowerPointExportService();
     private final FilterStateRegistry filterRegistry = new FilterStateRegistry();
@@ -100,6 +107,31 @@ public class MainController {
     private List<ValidationError> currentErrors = new ArrayList<>();
     private final PivotDataService pivotService = new PivotDataService();
     private List<PivotDataService.PivotResult> currentPivotResults = new ArrayList<>();
+
+    // Dashboard items
+    private final ObservableList<DashboardItem> dashboardItems = FXCollections.observableArrayList();
+    private int dashboardItemCounter = 0;
+    private final DashboardExportService dashboardExportService = new DashboardExportService();
+
+    // Inner class for dashboard items
+    public static class DashboardItem {
+        private final String type;
+        private final String title;
+        private final Node content;
+        private final Node controlPanel;
+
+        public DashboardItem(String type, String title, Node content, Node controlPanel) {
+            this.type = type;
+            this.title = title;
+            this.content = content;
+            this.controlPanel = controlPanel;
+        }
+
+        public String getType() { return type; }
+        public String getTitle() { return title; }
+        public Node getContent() { return content; }
+        public Node getControlPanel() { return controlPanel; }
+    }
 
     @FXML
     public void initialize() {
@@ -136,8 +168,16 @@ public class MainController {
         setupAlternatingRows(dataTable);
         setupAlternatingRows(pivotTable);
 
+        // Setup dashboard
+        setupDashboard();
+
         // Disable chart update buttons initially
         // They will be enabled when data is loaded
+    }
+
+    private void setupDashboard() {
+        dashboardContainer.setStyle("-fx-background-color: #f8f9fa;");
+        refreshDashboard();
     }
 
     private <S> void setupAlternatingRows(TableView<S> table) {
@@ -155,6 +195,313 @@ public class MainController {
             }
         });
     }
+
+    // ============ HELP METHODS ============
+
+    @FXML
+    private void handlePivotHelp() {
+        showHelpDialog("Pivot Table Guide",
+                "Rows: Select the field you want to group your data by. Each unique value in this field becomes a row in the pivot table.\n\n" +
+                        "Values: Select the field containing the numeric data you want to aggregate (sum, count, average, etc.).\n\n" +
+                        "Summarize by: Choose how you want to aggregate the values:\n" +
+                        "  • Count: Counts the number of records in each group\n" +
+                        "  • Sum: Adds up all numeric values in each group\n" +
+                        "  • Average: Calculates the average value in each group\n\n" +
+                        "Tip: Use 'Add to Dashboard' to save this pivot table to your dashboard for later reference."
+        );
+    }
+
+    @FXML
+    private void handleBarChartHelp() {
+        showHelpDialog("Bar Chart Guide",
+                "Categories (X-Axis): Select the field that defines the categories/bars in your chart. Each unique value becomes a bar.\n\n" +
+                        "Values (Y-Axis): Select the numeric field you want to visualize. This determines the height of each bar.\n\n" +
+                        "Aggregation: Choose how to aggregate the values for each category:\n" +
+                        "  • Count: Number of records per category\n" +
+                        "  • Sum: Total sum of values per category\n" +
+                        "  • Average: Average value per category\n" +
+                        "  • Min: Minimum value per category\n" +
+                        "  • Max: Maximum value per category\n\n" +
+                        "Group By (Optional): Add a second dimension to create grouped bar charts. Each group gets its own color.\n\n" +
+                        "Tip: Use 'Add to Dashboard' to save this chart to your dashboard."
+        );
+    }
+
+    @FXML
+    private void handlePieChartHelp() {
+        showHelpDialog("Pie Chart Guide",
+                "Categories (Slices): Select the field that defines the slices of your pie chart. Each unique value becomes a slice.\n\n" +
+                        "Values: Select the numeric field you want to visualize. This determines the size of each slice.\n\n" +
+                        "Aggregation: Choose how to aggregate the values for each category:\n" +
+                        "  • Count: Number of records per category\n" +
+                        "  • Sum: Total sum of values per category\n" +
+                        "  • Average: Average value per category\n" +
+                        "  • Min: Minimum value per category\n" +
+                        "  • Max: Maximum value per category\n\n" +
+                        "Tip: Use 'Add to Dashboard' to save this chart to your dashboard."
+        );
+    }
+
+    private void showHelpDialog(String title, String content) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Help: " + title);
+        dialog.setHeaderText(title);
+
+        javafx.scene.text.Text text = new javafx.scene.text.Text(content);
+        text.setWrappingWidth(450);
+        javafx.scene.text.TextFlow textFlow = new javafx.scene.text.TextFlow(text);
+        textFlow.setPadding(new Insets(10));
+
+        dialog.getDialogPane().setContent(textFlow);
+        dialog.getDialogPane().setPrefWidth(500);
+
+        ButtonType closeButton = new ButtonType("Close", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().add(closeButton);
+
+        dialog.showAndWait();
+    }
+
+    // ============ DASHBOARD METHODS ============
+
+    @FXML
+    private void handleAddPivotToDashboard() {
+        if (pivotTable.getItems().isEmpty()) {
+            showError("Add to Dashboard", "Please update the pivot table first before adding to dashboard.");
+            return;
+        }
+
+        String title = "Pivot Table: " + pivotRowCombo.getValue() + " vs " + pivotValueCombo.getValue() +
+                " (" + pivotAggCombo.getValue() + ")";
+
+        TableView<PivotDataService.PivotResult> dashboardPivot = createClonedPivotTable();
+        dashboardPivot.setItems(FXCollections.observableArrayList(pivotTable.getItems()));
+
+        String uniqueId = "pivot_" + (++dashboardItemCounter);
+        DashboardItem item = new DashboardItem("pivot", title, dashboardPivot, createRemoveButton(uniqueId));
+        addToDashboard(item);
+    }
+
+    @FXML
+    private void handleAddBarChartToDashboard() {
+        if (barChart.getData().isEmpty()) {
+            showError("Add to Dashboard", "Please update the bar chart first before adding to dashboard.");
+            return;
+        }
+
+        String title = "Bar Chart: " + barChartCategoryCombo.getValue() + " by " +
+                barChartAggCombo.getValue() + " of " + barChartValueCombo.getValue();
+
+        BarChart<String, Number> dashboardChart = createClonedBarChart();
+        dashboardChart.setData(cloneChartData(barChart.getData()));
+        dashboardChart.setTitle(title);
+        dashboardChart.setPrefHeight(300);
+        dashboardChart.setLegendVisible(true);
+
+        String uniqueId = "barchart_" + (++dashboardItemCounter);
+        DashboardItem item = new DashboardItem("barchart", title, dashboardChart, createRemoveButton(uniqueId));
+        addToDashboard(item);
+    }
+
+    @FXML
+    private void handleAddPieChartToDashboard() {
+        if (pieChart.getData().isEmpty()) {
+            showError("Add to Dashboard", "Please update the pie chart first before adding to dashboard.");
+            return;
+        }
+
+        String title = "Pie Chart: " + pieChartCategoryCombo.getValue() + " by " +
+                pieChartAggCombo.getValue() + " of " + pieChartValueCombo.getValue();
+
+        PieChart dashboardChart = createClonedPieChart();
+        dashboardChart.setData(clonePieChartData(pieChart.getData()));
+        dashboardChart.setTitle(title);
+        dashboardChart.setPrefHeight(300);
+        dashboardChart.setLegendVisible(true);
+
+        String uniqueId = "piechart_" + (++dashboardItemCounter);
+        DashboardItem item = new DashboardItem("piechart", title, dashboardChart, createRemoveButton(uniqueId));
+        addToDashboard(item);
+    }
+
+    private TableView<PivotDataService.PivotResult> createClonedPivotTable() {
+        TableView<PivotDataService.PivotResult> table = new TableView<>();
+        table.setPrefHeight(250);
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<PivotDataService.PivotResult, String> groupCol = new TableColumn<>("Category");
+        groupCol.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getGroup()));
+        groupCol.setPrefWidth(200);
+
+        TableColumn<PivotDataService.PivotResult, Number> valueCol = new TableColumn<>("Value");
+        valueCol.setCellValueFactory(d -> new javafx.beans.property.SimpleDoubleProperty(d.getValue().getValue()));
+        valueCol.setPrefWidth(150);
+
+        table.getColumns().addAll(groupCol, valueCol);
+        setupAlternatingRows(table);
+
+        return table;
+    }
+
+    private BarChart<String, Number> createClonedBarChart() {
+        CategoryAxis xAxis = new CategoryAxis();
+        NumberAxis yAxis = new NumberAxis();
+        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
+        chart.setAnimated(false);
+        chart.setPrefHeight(300);
+        return chart;
+    }
+
+    private PieChart createClonedPieChart() {
+        PieChart chart = new PieChart();
+        chart.setAnimated(false);
+        chart.setPrefHeight(300);
+        return chart;
+    }
+
+    private ObservableList<XYChart.Series<String, Number>> cloneChartData(ObservableList<XYChart.Series<String, Number>> originalData) {
+        ObservableList<XYChart.Series<String, Number>> clonedData = FXCollections.observableArrayList();
+        for (XYChart.Series<String, Number> series : originalData) {
+            XYChart.Series<String, Number> clonedSeries = new XYChart.Series<>();
+            clonedSeries.setName(series.getName());
+            for (XYChart.Data<String, Number> data : series.getData()) {
+                clonedSeries.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
+            }
+            clonedData.add(clonedSeries);
+        }
+        return clonedData;
+    }
+
+    private ObservableList<PieChart.Data> clonePieChartData(ObservableList<PieChart.Data> originalData) {
+        ObservableList<PieChart.Data> clonedData = FXCollections.observableArrayList();
+        for (PieChart.Data data : originalData) {
+            clonedData.add(new PieChart.Data(data.getName(), data.getPieValue()));
+        }
+        return clonedData;
+    }
+
+    private Node createRemoveButton(String uniqueId) {
+        Button removeBtn = new Button("✕ Remove");
+        removeBtn.setStyle("-fx-base: #dc3545; -fx-text-fill: white; -fx-font-size: 11px;");
+        removeBtn.setPrefWidth(80);
+        removeBtn.setOnAction(e -> {
+            DashboardItem toRemove = null;
+            for (DashboardItem item : dashboardItems) {
+                if (item.getControlPanel() == removeBtn || item.getControlPanel().equals(removeBtn)) {
+                    toRemove = item;
+                    break;
+                }
+            }
+            if (toRemove != null) {
+                dashboardItems.remove(toRemove);
+                refreshDashboard();
+            }
+        });
+        return removeBtn;
+    }
+
+    private void addToDashboard(DashboardItem item) {
+        dashboardItems.add(item);
+        refreshDashboard();
+        // Switch to dashboard tab
+        for (Tab tab : mainTabPane.getTabs()) {
+            if ("Dashboard".equals(tab.getText())) {
+                mainTabPane.getSelectionModel().select(tab);
+                break;
+            }
+        }
+        showInfo("Added to Dashboard", "Item added to dashboard successfully.");
+    }
+
+    private void refreshDashboard() {
+        dashboardContainer.getChildren().clear();
+
+        if (dashboardItems.isEmpty()) {
+            Label emptyLabel = new Label("No items added to dashboard yet. Use 'Add to Dashboard' buttons in the Pivot Table, Bar Chart, or Pie Chart tabs.");
+            emptyLabel.setStyle("-fx-font-size: 14; -fx-text-fill: #6c757d; -fx-wrap-text: true;");
+            dashboardContainer.getChildren().add(emptyLabel);
+            return;
+        }
+
+        for (DashboardItem item : dashboardItems) {
+            VBox itemContainer = new VBox(5);
+            itemContainer.setStyle("-fx-border-color: #dee2e6; -fx-border-width: 1; -fx-padding: 10; -fx-background-color: white; -fx-border-radius: 5; -fx-background-radius: 5;");
+
+            // Header with title and remove button
+            HBox header = new HBox(10);
+            header.setAlignment(Pos.CENTER_LEFT);
+
+            Label titleLabel = new Label(item.getTitle());
+            titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            HBox controlBox = new HBox(5);
+            controlBox.setAlignment(Pos.CENTER_RIGHT);
+            controlBox.getChildren().add(item.getControlPanel());
+
+            header.getChildren().addAll(titleLabel, spacer, controlBox);
+
+            // Content
+            Node content = item.getContent();
+            if (content instanceof TableView) {
+                ((TableView<?>) content).setPrefHeight(250);
+            } else if (content instanceof Chart) {
+                ((Chart) content).setPrefHeight(300);
+            }
+
+            itemContainer.getChildren().addAll(header, content);
+            dashboardContainer.getChildren().add(itemContainer);
+        }
+    }
+
+    @FXML
+    private void handleClearDashboard() {
+        if (dashboardItems.isEmpty()) {
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Clear Dashboard");
+        confirm.setHeaderText("Clear all dashboard items?");
+        confirm.setContentText("This will remove all items from your dashboard. This action cannot be undone.");
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            dashboardItems.clear();
+            refreshDashboard();
+        }
+    }
+
+    @FXML
+    private void handleExportDashboard() {
+        if (dashboardItems.isEmpty()) {
+            showError("Export Dashboard", "No items to export. Add some items to the dashboard first.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PowerPoint Files", "*.pptx"));
+        fileChooser.setInitialFileName("dashboard_export.pptx");
+        File file = fileChooser.showSaveDialog(null);
+
+        if (file == null) return;
+
+        try {
+            // Show progress indicator
+            showInfo("Exporting Dashboard", "Preparing dashboard export with " + dashboardItems.size() + " items...");
+
+            // Export using the service
+            dashboardExportService.exportDashboardToPPTX(new ArrayList<>(dashboardItems), file);
+
+            showInfo("Export Success", "Dashboard exported successfully to:\n" + file.getAbsolutePath());
+        } catch (Exception e) {
+            showError("Export Dashboard Error", "Failed to export dashboard: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // ============ EXISTING METHODS (unchanged below) ============
 
     @FXML
     private void handleOpenFile() {
@@ -913,5 +1260,23 @@ public class MainController {
         alert.setTitle(title);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    @FXML
+    private void handleRegionMassAdder() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/app/view/RegionMassAdderView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("Region Mass Adder");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 800, 550));
+            stage.showAndWait();
+
+        } catch (Exception e) {
+            showError("Region Mass Adder", "Could not open Region Mass Adder: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.CheckComboBox?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.app.controller.MainController"
+      spacing="10">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button text="Open File" onAction="#handleOpenFile"/>
+        <Label fx:id="filePathLabel" text="No file selected" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button fx:id="reviewErrorsBtn" text="Review Data Errors" onAction="#handleReviewErrors"
+                visible="false" style="-fx-base: #dc3545; -fx-text-fill: white;"/>
+    </HBox>
+
+    <TabPane fx:id="mainTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+        <Tab text="Table">
+            <VBox spacing="10">
+                <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Select Columns:"/>
+                    <CheckComboBox fx:id="columnSelector" prefWidth="200"/>
+                    <Label text="Start Date:"/>
+                    <DatePicker fx:id="startDatePicker"/>
+                    <Label text="End Date:"/>
+                    <DatePicker fx:id="endDatePicker"/>
+                </HBox>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Search:"/>
+                    <TextField fx:id="searchField" promptText="Type to filter..." HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+                    <TableView fx:id="dataTable" style="-fx-selection-bar: #cfe2f3; -fx-selection-bar-non-focused: #e8f0f7;"/>
+                </ScrollPane>
+            </VBox>
+        </Tab>
+
+        <Tab text="Pivot Table">
+            <HBox spacing="0" VBox.vgrow="ALWAYS">
+                <!-- Pivot Field List Sidebar -->
+                <VBox spacing="10" prefWidth="250" style="-fx-background-color: #f3f3f3; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <Label text="PivotTable Fields" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Label text="Choose fields to add to report:"/>
+                    <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true">
+                        <VBox fx:id="pivotFieldsContainer" spacing="5"/>
+                    </ScrollPane>
+                    <Separator/>
+                    <Label text="Rows:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="pivotRowCombo" maxWidth="Infinity"/>
+                    <Label text="Values:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="pivotValueCombo" maxWidth="Infinity"/>
+                    <Label text="Summarize by:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="pivotAggCombo" maxWidth="Infinity"/>
+                    <Button text="Update Pivot" onAction="#handleUpdateDashboard" maxWidth="Infinity" style="-fx-base: #217346; -fx-text-fill: white;"/>
+                </VBox>
+
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <TableView fx:id="pivotTable" VBox.vgrow="ALWAYS" style="-fx-selection-bar: #cfe2f3;">
+                        <columns>
+                            <TableColumn fx:id="pivotGroupCol" text="Row Labels" prefWidth="300"/>
+                            <TableColumn fx:id="pivotValueCol" text="Values" prefWidth="150"/>
+                        </columns>
+                        <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+                    </TableView>
+                </VBox>
+            </HBox>
+        </Tab>
+
+        <Tab text="AI Correction Agent">
+            <VBox spacing="20" alignment="CENTER">
+                <padding><Insets top="40" right="40" bottom="40" left="40"/></padding>
+                <Label text="AI Data Correction Specialist" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+                <Label text="The AI Agent will scan geographic fields and suggest fixes for misplaced or incorrectly formatted data."
+                       wrapText="true" textAlignment="CENTER" maxWidth="600"/>
+
+                <VBox spacing="10" alignment="CENTER" maxWidth="400" style="-fx-border-color: #cccccc; -fx-padding: 20; -fx-border-radius: 5;">
+                    <Label text="Configuration" style="-fx-font-weight: bold;"/>
+                    <CheckBox fx:id="aiAutoApplyCheck" text="Auto-apply corrections" selected="true"/>
+                </VBox>
+
+                <Button fx:id="aiReviewBtn" text="Review Data with AI" onAction="#handleAIReview"
+                        prefWidth="250" prefHeight="50" style="-fx-base: #007bff; -fx-text-fill: white; -fx-font-size: 16;"/>
+
+                <ProgressBar fx:id="aiProgressBar" prefWidth="400" progress="0.0" visible="false"/>
+                <Label fx:id="aiStatusLabel" text="Ready" visible="false"/>
+            </VBox>
+        </Tab>
+
+        <!-- Updated Bar Chart Tab with Field Selector -->
+        <Tab text="Bar Chart">
+            <HBox spacing="0" VBox.vgrow="ALWAYS">
+                <!-- Bar Chart Field Selector Sidebar -->
+                <VBox spacing="10" prefWidth="250" style="-fx-background-color: #f3f3f3; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <Label text="Bar Chart Fields" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Label text="Choose fields for the bar chart:"/>
+
+                    <Separator/>
+                    <Label text="Categories (X-Axis):" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="barChartCategoryCombo" maxWidth="Infinity"/>
+
+                    <Label text="Values (Y-Axis):" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="barChartValueCombo" maxWidth="Infinity"/>
+
+                    <Label text="Aggregation:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="barChartAggCombo" maxWidth="Infinity"/>
+
+                    <Label text="Group By (Optional):" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="barChartGroupCombo" maxWidth="Infinity"/>
+
+                    <Separator/>
+                    <Button text="Update Bar Chart" onAction="#handleUpdateBarChart" maxWidth="Infinity"
+                            style="-fx-base: #007bff; -fx-text-fill: white;"/>
+                    <Button text="Clear Fields" onAction="#handleClearBarChart" maxWidth="Infinity"
+                            style="-fx-base: #6c757d; -fx-text-fill: white;"/>
+                </VBox>
+
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <BarChart fx:id="barChart" VBox.vgrow="ALWAYS">
+                        <xAxis><CategoryAxis label="Category" /></xAxis>
+                        <yAxis><NumberAxis label="Value" /></yAxis>
+                    </BarChart>
+                </VBox>
+            </HBox>
+        </Tab>
+
+        <!-- Updated Pie Chart Tab with Field Selector -->
+        <Tab text="Pie Chart">
+            <HBox spacing="0" VBox.vgrow="ALWAYS">
+                <!-- Pie Chart Field Selector Sidebar -->
+                <VBox spacing="10" prefWidth="250" style="-fx-background-color: #f3f3f3; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <Label text="Pie Chart Fields" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Label text="Choose fields for the pie chart:"/>
+
+                    <Separator/>
+                    <Label text="Categories (Slices):" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="pieChartCategoryCombo" maxWidth="Infinity"/>
+
+                    <Label text="Values:" style="-fx-font-weight: bold;"/>
+                    <ComboBox fx:id="pieChartValueCombo" maxWidth="Infinity"/>
+
+                    <Label text="Aggregation:" style="-fx-weight: bold;"/>
+                    <ComboBox fx:id="pieChartAggCombo" maxWidth="Infinity"/>
+
+                    <Separator/>
+                    <Button text="Update Pie Chart" onAction="#handleUpdatePieChart" maxWidth="Infinity"
+                            style="-fx-base: #dc3545; -fx-text-fill: white;"/>
+                    <Button text="Clear Fields" onAction="#handleClearPieChart" maxWidth="Infinity"
+                            style="-fx-base: #6c757d; -fx-text-fill: white;"/>
+                </VBox>
+
+                <VBox spacing="10" HBox.hgrow="ALWAYS">
+                    <padding><Insets top="10" right="10" bottom="10" left="10"/></padding>
+                    <PieChart fx:id="pieChart" VBox.vgrow="ALWAYS" />
+                </VBox>
+            </HBox>
+        </Tab>
+    </TabPane>
+
+    <HBox spacing="20" alignment="CENTER_LEFT">
+        <Label fx:id="rowCountLabel" text="0 rows loaded"/>
+        <Label fx:id="colCountLabel" text="0 columns selected"/>
+        <Region HBox.hgrow="ALWAYS" />
+        <Button text="Export to PowerPoint" onAction="#handleExport"/>
+    </HBox>
+
+</VBox>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.app.controller.RegionMassAdderController"
+      style="-fx-background-color: #f0f4f8; -fx-padding: 15;">
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 15 0;">
+        <Label text="Region Mass Adder" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #003366;">
+            <font>
+                <Font name="Arial" size="20"/>
+            </font>
+        </Label>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="✕" onAction="#handleClose" style="-fx-base: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+    </HBox>
+
+    <!-- Main Content -->
+    <HBox spacing="15" VBox.vgrow="ALWAYS">
+
+        <!-- Left Panel - File Selection -->
+        <VBox spacing="10"
+              minWidth="250"
+              maxWidth="280"
+              style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;"
+              HBox.hgrow="NEVER">
+            <Label text="Files" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #003366;"/>
+
+            <HBox spacing="5">
+                <Button text="Add Files" onAction="#handleAddFiles" style="-fx-base: #28a745; -fx-text-fill: white;">
+                    <font>
+                        <Font name="Arial" size="12"/>
+                    </font>
+                </Button>
+                <Button text="Remove" onAction="#handleRemoveSelectedFile" style="-fx-base: #dc3545; -fx-text-fill: white;">
+                    <font>
+                        <Font name="Arial" size="12"/>
+                    </font>
+                </Button>
+                <Button text="Clear All" onAction="#handleClearFiles" style="-fx-base: #6c757d; -fx-text-fill: white;">
+                    <font>
+                        <Font name="Arial" size="12"/>
+                    </font>
+                </Button>
+            </HBox>
+
+            <ListView fx:id="fileListView" prefHeight="200" prefWidth="250"/>
+
+            <HBox spacing="10">
+                <Label fx:id="fileCountLabel" text="Files: 0" style="-fx-text-fill: #6c757d;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="processedCountLabel" text="Processed: 0" style="-fx-text-fill: #28a745;"/>
+            </HBox>
+
+            <Separator/>
+
+            <Label text="Country Column" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
+            <ComboBox fx:id="countryColumnSelector" promptText="Select Country Column" prefWidth="250"/>
+
+            <Button fx:id="processFilesBtn" text="Process Selected File" onAction="#handleProcessFiles"
+                    disable="true" style="-fx-base: #17a2b8; -fx-text-fill: white;">
+                <font>
+                    <Font name="Arial" size="13"/>
+                </font>
+            </Button>
+        </VBox>
+
+        <!-- Right Panel - Preview -->
+        <VBox spacing="10"
+              style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;"
+              HBox.hgrow="ALWAYS">
+            <Label text="Preview" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #003366;"/>
+
+            <ScrollPane VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 3; -fx-background-color: white;">
+                <TableView fx:id="previewTable" prefHeight="400">
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                    </columnResizePolicy>
+                </TableView>
+            </ScrollPane>
+
+            <Label fx:id="statusLabel" text="Select Excel files to begin" style="-fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+
+            <HBox spacing="10">
+                <Button fx:id="addRegionBtn" text="Add Region Column" onAction="#handleAddRegionColumn"
+                        disable="true" style="-fx-base: #28a745; -fx-text-fill: white;">
+                    <font>
+                        <Font name="Arial" size="13"/>
+                    </font>
+                </Button>
+                <Button fx:id="populateRegionBtn" text="Populate Region Column" onAction="#handlePopulateRegionColumn"
+                        disable="true" style="-fx-base: #ffc107; -fx-text-fill: black;">
+                    <font>
+                        <Font name="Arial" size="13"/>
+                    </font>
+                </Button>
+                <Button fx:id="exportFilesBtn" text="Export Files" onAction="#handleExportFiles"
+                        disable="true" style="-fx-base: #003366; -fx-text-fill: white;">
+                    <font>
+                        <Font name="Arial" size="13"/>
+                    </font>
+                </Button>
+            </HBox>
+        </VBox>
+
+    </HBox>
+</VBox>

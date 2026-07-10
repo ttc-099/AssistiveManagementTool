@@ -1279,4 +1279,22 @@ public class MainController {
             e.printStackTrace();
         }
     }
+
+    @FXML
+    private void handleRegionAnalyser() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/app/view/RegionAnalyserView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("2025/2026 Region Analyser");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1100, 700));
+            stage.showAndWait();
+
+        } catch (Exception e) {
+            showError("Region Analyser", "Could not open Region Analyser: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

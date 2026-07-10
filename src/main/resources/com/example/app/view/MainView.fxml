@@ -189,7 +189,7 @@
                 </HBox>
                 <Separator/>
                 <VBox spacing="10" alignment="CENTER" VBox.vgrow="ALWAYS">
-                    <Label text="Use the Groq-powered AI Agent to scan and auto-correct messy data rows."
+                    <Label text="Use the Llama-powered AI Agent to scan and auto-correct messy data rows."
                            style="-fx-font-size: 14; -fx-text-fill: #495057;"/>
                     <Button fx:id="aiReviewBtn" text="Start AI Data Review" onAction="#handleAIReview"
                             style="-fx-base: #6f42c1; -fx-text-fill: white; -fx-padding: 10 20 10 20; -fx-font-size: 14;"/>
@@ -240,9 +240,63 @@
                                    style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
                         </VBox>
                         <Button text="Open Tool" onAction="#handleRegionMassAdder"
-                                style="-fx-base: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
+                                style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
                             <tooltip>
                                 <Tooltip text="Open Region Mass Adder tool"/>
+                            </tooltip>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <!-- 2025/2026 Region Analyser Tool Card -->
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="📊" style="-fx-font-size: 32;"/>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="2025/2026 Region Analyser" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
+                            <Label text="Analyse and compare regional data across 2025 and 2026. Identify trends, growth patterns, and regional performance metrics."
+                                   style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+                        </VBox>
+                        <Button text="Open Tool" onAction="#handleRegionAnalyser"
+                                style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
+                            <tooltip>
+                                <Tooltip text="Open 2025/2026 Region Analyser tool"/>
+                            </tooltip>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <!-- UA List Updater Tool Card -->
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="📋" style="-fx-font-size: 32;"/>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="UA List Updater" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
+                            <Label text="Manage and update the Unconditional Acceptance (UA) list. Track applicant statuses, view acceptance trends, and maintain regional UA records."
+                                   style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+                        </VBox>
+                        <Button text="Open Tool" onAction="#handleRegionAnalyser"
+                                style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
+                            <tooltip>
+                                <Tooltip text="Open UA List Updater tool"/>
+                            </tooltip>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <!-- Invoice List Updater Tool Card -->
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="📝" style="-fx-font-size: 32;"/>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Invoice List Updater" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
+                            <Label text="Manage and update invoice records efficiently. Track payment statuses, view billing trends, and maintain regional invoice data."
+                                   style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+                        </VBox>
+                        <Button text="Open Tool" onAction="#handleInvoiceListUpdater"
+                                style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
+                            <tooltip>
+                                <Tooltip text="Open Invoice List Updater tool"/>
                             </tooltip>
                         </Button>
                     </HBox>

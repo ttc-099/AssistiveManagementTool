@@ -28,3 +28,37 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Windows ###
+Thumbs.db
+desktop.ini
+
+### Java & Build Tools (Maven/Gradle) ###
+target/
+**/target/
+**/*.class
+**/classes/
+**/maven-status/
+**/archive-tmp/
+**/maven-archiver/
+*.jar
+*.war
+*.ear
+
+### Package & Installer Artifacts (jpackage/WiX) ###
+build-temp/
+**/build-temp/
+runtime/
+**/runtime/
+custom-jre/
+**/custom-jre/
+**/.jpackage.xml
+**/*.cfg
+**/*.exe
+**/*.msi
+
+### AI Models / Heavy Assets ###
+app_models/
+**/app_models/
+*.gguf
+

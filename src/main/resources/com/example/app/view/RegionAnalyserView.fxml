@@ -13,7 +13,7 @@
 
     <!-- Header -->
     <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 15 0;">
-        <Label text="📊 2025/2026 Region Analyser" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #003366;">
+        <Label text="📊 Region Analyser" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #003366;">
             <font>
                 <Font name="Arial" size="20"/>
             </font>
@@ -22,50 +22,92 @@
         <Button text="✕" onAction="#handleClose" style="-fx-base: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
     </HBox>
 
-    <!-- File Load Section -->
-    <HBox spacing="20" style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;">
-        <!-- 2025 File -->
+    <!-- File Management Section -->
+    <VBox spacing="10" style="-fx-background-color: white; -fx-padding: 15; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;">
+
+        <!-- File Load Controls -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Button text="📁 Add Files" onAction="#handleAddFiles"
+                    style="-fx-base: #007bff; -fx-text-fill: white; -fx-font-weight: bold;"/>
+            <Button text="🗑️ Clear All" onAction="#handleClearFiles"
+                    style="-fx-base: #dc3545; -fx-text-fill: white; -fx-font-weight: bold;"/>
+            <Label fx:id="fileCountLabel" text="0 files loaded" style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="📤 Export to Excel" fx:id="exportBtn" onAction="#handleExport"
+                    disable="true" style="-fx-base: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20 8 20;"/>
+        </HBox>
+
+        <!-- File List -->
+        <ListView fx:id="fileListView" prefHeight="120" style="-fx-border-color: #dee2e6; -fx-border-radius: 3;">
+            <placeholder>
+                <Label text="No files loaded. Click 'Add Files' to begin."
+                       style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+            </placeholder>
+        </ListView>
+
+        <!-- Selected File Info -->
+        <HBox spacing="15" alignment="CENTER_LEFT">
+            <Label text="Selected:" style="-fx-font-weight: bold; -fx-text-fill: #003366;"/>
+            <Label fx:id="selectedFileLabel" text="None" style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+            <Label text="|" style="-fx-text-fill: #dee2e6;"/>
+            <Label text="Sheets found:" style="-fx-text-fill: #6c757d;"/>
+            <Label fx:id="sheetsFoundLabel" text="-" style="-fx-text-fill: #6c757d;"/>
+        </HBox>
+    </VBox>
+
+    <!-- Year Configuration Section -->
+    <HBox spacing="20" style="-fx-padding: 10 0 10 0; -fx-background-color: white; -fx-padding: 15; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;">
+
+        <!-- Year 1 -->
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <Label text="📁 2025 Data" style="-fx-font-weight: bold; -fx-text-fill: #003366;"/>
-            <HBox spacing="10">
-                <Button fx:id="load2025Btn" text="Load 2025 File" onAction="#handleLoad2025"
-                        style="-fx-base: #28a745; -fx-text-fill: white;"/>
-                <Label fx:id="file2025Label" text="No file loaded" style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+            <Label text="📅 Application Year 1" style="-fx-font-weight: bold; -fx-text-fill: #003366;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="year1Field" promptText="e.g., 2025" prefWidth="120"
+                           style="-fx-font-size: 14px;"/>
+                <Label text="(e.g., 2025)" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
             </HBox>
         </VBox>
 
-        <!-- 2026 File -->
+        <!-- Year 2 -->
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <Label text="📁 2026 Data" style="-fx-font-weight: bold; -fx-text-fill: #003366;"/>
-            <HBox spacing="10">
-                <Button fx:id="load2026Btn" text="Load 2026 File" onAction="#handleLoad2026"
-                        style="-fx-base: #17a2b8; -fx-text-fill: white;"/>
-                <Label fx:id="file2026Label" text="No file loaded" style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+            <Label text="📅 Application Year 2" style="-fx-font-weight: bold; -fx-text-fill: #003366;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <TextField fx:id="year2Field" promptText="e.g., 2026" prefWidth="120"
+                           style="-fx-font-size: 14px;"/>
+                <Label text="(e.g., 2026)" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
             </HBox>
+        </VBox>
+
+        <!-- Generate Button -->
+        <VBox spacing="5" alignment="BOTTOM_LEFT">
+            <Button fx:id="generateBtn" text="🔄 Generate Report" onAction="#handleGenerate"
+                    disable="true" style="-fx-base: #003366; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 8 30 8 30;"/>
         </VBox>
     </HBox>
 
-    <!-- Action Buttons -->
-    <HBox spacing="10" style="-fx-padding: 10 0 10 0;">
-        <Button fx:id="generateBtn" text="🔄 Generate Report" onAction="#handleGenerate"
-                disable="true" style="-fx-base: #003366; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20 8 20;"/>
-        <Button fx:id="exportBtn" text="📤 Export to Excel" onAction="#handleExport"
-                disable="true" style="-fx-base: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20 8 20;"/>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="statusLabel" text="Load 2025 and 2026 Excel files to begin."
+    <!-- Status Bar -->
+    <HBox spacing="10" style="-fx-padding: 5 0 5 0;">
+        <Label fx:id="statusLabel" text="Load files and enter years to begin."
                style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="progressLabel" text="" style="-fx-text-fill: #17a2b8;"/>
+        <ProgressBar fx:id="progressBar" prefWidth="150" visible="false" style="-fx-accent: #003366;"/>
     </HBox>
 
     <!-- Preview Table -->
     <VBox spacing="5" VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 10; -fx-border-color: #dee2e6; -fx-border-radius: 5; -fx-background-radius: 5;">
-        <Label text="📋 Preview" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #003366;"/>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="📋 Preview" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #003366;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="rowCountLabel" text="0 rows" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+        </HBox>
         <ScrollPane VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 3; -fx-background-color: white;">
             <TableView fx:id="previewTable" prefHeight="400">
                 <columnResizePolicy>
                     <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                 </columnResizePolicy>
                 <placeholder>
-                    <Label text="Load and generate report to preview data"
+                    <Label text="Load files, enter years, and click 'Generate Report'"
                            style="-fx-font-size: 14px; -fx-text-fill: #6c757d;"/>
                 </placeholder>
             </TableView>
@@ -85,6 +127,10 @@
         <HBox spacing="5" alignment="CENTER">
             <Label text="■" style="-fx-text-fill: #e9ecef; -fx-font-size: 16px; -fx-border-color: #6c757d; -fx-border-width: 1;"/>
             <Label text="Total Row" style="-fx-font-size: 11px; -fx-text-fill: #6c757d;"/>
+        </HBox>
+        <HBox spacing="5" alignment="CENTER">
+            <Label text="📌" style="-fx-font-size: 14px;"/>
+            <Label text="Files can contain 'FY data' and/or 'UGPG data' sheets" style="-fx-font-size: 11px; -fx-text-fill: #6c757d; -fx-font-style: italic;"/>
         </HBox>
     </HBox>
 </VBox>

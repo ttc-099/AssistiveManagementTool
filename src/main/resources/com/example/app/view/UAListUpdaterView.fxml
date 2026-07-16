@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.app.controller.UAListUpdaterController"
+      style="-fx-background-color: #f0f4f8; -fx-padding: 15;">
+
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 15 0;">
+        <Label text="UA List Updater" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #003366;">
+            <font>
+                <Font name="Arial" size="20"/>
+            </font>
+        </Label>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="✕" onAction="#handleClose" style="-fx-base: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"/>
+    </HBox>
+
+    <!-- Initial Popup -->
+    <VBox fx:id="initialPopupContainer" spacing="30" alignment="CENTER" VBox.vgrow="ALWAYS">
+        <Label text="UA List Updater" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #003366;"/>
+        <Label text="Choose an option to continue" style="-fx-font-size: 14px; -fx-text-fill: #6c757d;"/>
+
+        <HBox spacing="20" alignment="CENTER">
+            <Button fx:id="makeNewBtn" text="Make New" onAction="#handleMakeNew"
+                    style="-fx-base: #6c757d; -fx-text-fill: white; -fx-padding: 15 30 15 30; -fx-font-size: 14px;">
+                <tooltip>
+                    <Tooltip text="Coming Soon"/>
+                </tooltip>
+            </Button>
+            <Button fx:id="updateExistingBtn" text="Update Existing" onAction="#handleUpdateExisting"
+                    style="-fx-base: #28a745; -fx-text-fill: white; -fx-padding: 15 30 15 30; -fx-font-size: 14px;"/>
+        </HBox>
+
+        <Label text="Make New - Coming Soon" style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+    </VBox>
+
+    <!-- Main Container -->
+    <VBox fx:id="mainContainer" spacing="10" visible="false" managed="false" VBox.vgrow="ALWAYS">
+
+        <!-- File Load Section -->
+        <HBox spacing="15">
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Main Database" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
+                <HBox spacing="5">
+                    <Button fx:id="loadMainDbBtn" text="Load Main Database" onAction="#handleLoadMainDb"
+                            style="-fx-base: #17a2b8; -fx-text-fill: white;"/>
+                    <Label fx:id="mainDbLabel" text="No file selected" style="-fx-text-fill: #6c757d;"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="Existing UA List" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
+                <HBox spacing="5">
+                    <Button fx:id="loadUAListBtn" text="Load UA List" onAction="#handleLoadUAList"
+                            style="-fx-base: #17a2b8; -fx-text-fill: white;"/>
+                    <Label fx:id="uaListLabel" text="No file selected" style="-fx-text-fill: #6c757d;"/>
+                </HBox>
+            </VBox>
+        </HBox>
+
+        <Separator/>
+
+        <!-- Intake Selection -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Select Intake:" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
+            <ComboBox fx:id="intakeSelector" prefWidth="150"/>
+            <TextField fx:id="customIntakeField" prefWidth="150" promptText="e.g., July 2026"/>
+            <Button fx:id="generateBtn" text="Generate UA List" onAction="#handleGenerate"
+                    disable="true" style="-fx-base: #28a745; -fx-text-fill: white;"/>
+            <Button fx:id="exportBtn" text="Export UA List" onAction="#handleExport"
+                    disable="true" style="-fx-base: #003366; -fx-text-fill: white;"/>
+            <CheckBox fx:id="enableLLMCheckbox" text="Enable LLM Correction"
+                      style="-fx-text-fill: #6f42c1; -fx-font-weight: bold;"
+                      visible="false"/>
+        </HBox>
+
+        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 2 0 0 0;">
+            <ProgressBar fx:id="llmProgressBar" prefWidth="200" visible="false" style="-fx-accent: #6f42c1;"/>
+            <Label fx:id="llmStatusLabel" text="LLM: Idle" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+        </HBox>
+
+        <Separator/>
+
+        <!-- Main Content -->
+        <HBox spacing="10" VBox.vgrow="ALWAYS">
+
+            <!-- Preview Table -->
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+                <Label text="UA List Preview" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
+                <ScrollPane VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 3; -fx-background-color: white;">
+                    <TableView fx:id="previewTable" prefHeight="300">
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </ScrollPane>
+            </VBox>
+
+            <!-- Sidebar - New Additions -->
+            <VBox spacing="5" prefWidth="250" maxWidth="300" style="-fx-background-color: #f8f9fa; -fx-padding: 10; -fx-border-color: #dee2e6; -fx-border-radius: 5;">
+                <Label text="New Additions" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #28a745;"/>
+                <Label text="Students not in existing UA list" style="-fx-font-size: 10px; -fx-text-fill: #6c757d;"/>
+
+                <HBox spacing="10">
+                    <Label fx:id="totalNewLabel" text="New: 0" style="-fx-text-fill: #28a745;"/>
+                    <Label fx:id="totalExistingLabel" text="Existing: 0" style="-fx-text-fill: #17a2b8;"/>
+                    <Label fx:id="totalOverallLabel" text="Total: 0" style="-fx-text-fill: #003366;"/>
+                </HBox>
+
+                <ScrollPane VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 3; -fx-background-color: white;">
+                    <ListView fx:id="newAdditionsList" prefHeight="250"/>
+                </ScrollPane>
+            </VBox>
+        </HBox>
+
+        <Label fx:id="statusLabel" text="Load Main Database and UA List files to begin."
+               style="-fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+    </VBox>
+</VBox>

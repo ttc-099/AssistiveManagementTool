@@ -1297,4 +1297,33 @@ public class MainController {
             e.printStackTrace();
         }
     }
+
+    @FXML
+    private void handleUAListUpdater() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/app/view/UAListUpdaterView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("UA List Updater");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1000, 700));
+            stage.showAndWait();
+
+        } catch (Exception e) {
+            showError("UA List Updater", "Could not open UA List Updater: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleInvoiceListUpdater() {
+        try {
+            // For now, show a message that it's coming soon
+            showInfo("Invoice List Updater", "The Invoice List Updater tool will be available in a future update.");
+        } catch (Exception e) {
+            showError("Invoice List Updater", "Could not open Invoice List Updater: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

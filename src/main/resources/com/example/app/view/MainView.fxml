@@ -272,10 +272,10 @@
                         <Label text="📋" style="-fx-font-size: 32;"/>
                         <VBox spacing="5" HBox.hgrow="ALWAYS">
                             <Label text="UA List Updater" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
-                            <Label text="Manage and update the Unconditional Acceptance (UA) list. Track applicant statuses, view acceptance trends, and maintain regional UA records."
+                            <Label text="Update the UA list from the main database. Find new UA students and export an updated list."
                                    style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
                         </VBox>
-                        <Button text="Open Tool" onAction="#handleRegionAnalyser"
+                        <Button text="Open Tool" onAction="#handleUAListUpdater"
                                 style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
                             <tooltip>
                                 <Tooltip text="Open UA List Updater tool"/>

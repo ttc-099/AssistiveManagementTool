@@ -21,11 +21,13 @@ public class RegionMassAdderController {
     @FXML private Label statusLabel;
     @FXML private Label fileCountLabel;
     @FXML private Label processedCountLabel;
+    @FXML private Label validationLabel;
+    @FXML private Label previewInfoLabel;
+    @FXML private Label rowCountLabel;
     @FXML private Button processFilesBtn;
-    @FXML private Button addRegionBtn;
-    @FXML private Button populateRegionBtn;
     @FXML private Button exportFilesBtn;
     @FXML private ComboBox<String> countryColumnSelector;
+    @FXML private ComboBox<String> sheetSelector;
 
     private final RegionMassAdderService regionService = new RegionMassAdderService();
     private ObservableList<File> selectedFiles = FXCollections.observableArrayList();
@@ -55,6 +57,10 @@ public class RegionMassAdderController {
             } else {
                 processFilesBtn.setDisable(true);
             }
+            // Show validation status when file is selected
+            if (newVal != null) {
+                validateFile(newVal);
+            }
         });
 
         countryColumnSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
@@ -65,12 +71,33 @@ public class RegionMassAdderController {
             }
         });
 
+        sheetSelector.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && currentResult != null) {
+                // Pass both the result and the selected sheet name
+                displaySheetPreview(currentResult, newVal);
+            }
+        });
+
         processFilesBtn.setDisable(true);
-        addRegionBtn.setDisable(true);
-        populateRegionBtn.setDisable(true);
         exportFilesBtn.setDisable(true);
 
         updateCountLabels();
+        validationLabel.setText("No file selected");
+        validationLabel.setStyle("-fx-text-fill: #6c757d;");
+
+        // Set table to allow horizontal scrolling
+        previewTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+    }
+
+    private void validateFile(File file) {
+        try {
+            List<String> columns = regionService.getColumnHeaders(file);
+            validationLabel.setText("✅ Valid Excel file - Found " + columns.size() + " columns");
+            validationLabel.setStyle("-fx-text-fill: #28a745;");
+        } catch (Exception e) {
+            validationLabel.setText("❌ Invalid or corrupt file: " + e.getMessage());
+            validationLabel.setStyle("-fx-text-fill: #dc3545;");
+        }
     }
 
     @FXML
@@ -88,7 +115,10 @@ public class RegionMassAdderController {
             statusLabel.setText("Added " + files.size() + " file(s). Select a Country column and click 'Process Files'.");
             statusLabel.setStyle("-fx-text-fill: #17a2b8;");
 
-            detectCountryColumns(files.get(0));
+            if (!files.isEmpty()) {
+                detectCountryColumns(files.get(0));
+                validateFile(files.get(0));
+            }
         }
     }
 
@@ -100,15 +130,18 @@ public class RegionMassAdderController {
         previewTable.getItems().clear();
         previewTable.getColumns().clear();
         countryColumnSelector.getItems().clear();
+        sheetSelector.getItems().clear();
+        rowCountLabel.setText("");
+        previewInfoLabel.setText("Select and process a file to preview data");
 
         processFilesBtn.setDisable(true);
-        addRegionBtn.setDisable(true);
-        populateRegionBtn.setDisable(true);
         exportFilesBtn.setDisable(true);
 
         updateCountLabels();
         statusLabel.setText("Cleared all files.");
         statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        validationLabel.setText("No file selected");
+        validationLabel.setStyle("-fx-text-fill: #6c757d;");
     }
 
     @FXML
@@ -119,13 +152,22 @@ public class RegionMassAdderController {
             updateCountLabels();
             if (selectedFiles.isEmpty()) {
                 countryColumnSelector.getItems().clear();
+                sheetSelector.getItems().clear();
                 processFilesBtn.setDisable(true);
-                addRegionBtn.setDisable(true);
-                populateRegionBtn.setDisable(true);
                 exportFilesBtn.setDisable(true);
                 previewTable.getItems().clear();
                 previewTable.getColumns().clear();
                 currentResult = null;
+                rowCountLabel.setText("");
+                previewInfoLabel.setText("Select and process a file to preview data");
+                validationLabel.setText("No file selected");
+                validationLabel.setStyle("-fx-text-fill: #6c757d;");
+            } else {
+                // Validate next selected file
+                File nextFile = fileListView.getSelectionModel().getSelectedItem();
+                if (nextFile != null) {
+                    validateFile(nextFile);
+                }
             }
         }
     }
@@ -161,14 +203,28 @@ public class RegionMassAdderController {
             currentResult = result;
 
             if (result.isSuccess()) {
-                statusLabel.setText("✓ " + selectedFile.getName() + " processed successfully. Found " +
-                        result.getRowCount() + " rows with Country column '" + countryColumn + "'.");
+                int totalRows = result.getRowCount();
+                int previewRows = Math.min(100, totalRows);
+                statusLabel.setText("✓ " + selectedFile.getName() + " processed successfully. " +
+                        totalRows + " rows loaded across " + result.getSheetsData().size() + " sheets. " +
+                        "Region column automatically added.");
                 statusLabel.setStyle("-fx-text-fill: #28a745;");
 
-                displayPreview(result);
+                // Update sheet selector
+                sheetSelector.getItems().clear();
+                sheetSelector.getItems().addAll(result.getSheetsData().keySet());
+                if (!sheetSelector.getItems().isEmpty()) {
+                    sheetSelector.getSelectionModel().select(0);
+                }
 
-                addRegionBtn.setDisable(false);
-                populateRegionBtn.setDisable(false);
+                previewInfoLabel.setText("Showing up to 100 rows per sheet (Region column auto-added)");
+
+                // Display the first sheet's preview
+                String firstSheet = sheetSelector.getValue();
+                if (firstSheet != null) {
+                    displaySheetPreview(result, firstSheet);
+                }
+
                 exportFilesBtn.setDisable(false);
 
                 processedCountLabel.setText("Processed: " + processedResults.size());
@@ -176,8 +232,6 @@ public class RegionMassAdderController {
                 statusLabel.setText("✗ " + selectedFile.getName() + " failed: " + result.getErrorMessage());
                 statusLabel.setStyle("-fx-text-fill: #dc3545;");
 
-                addRegionBtn.setDisable(true);
-                populateRegionBtn.setDisable(true);
                 exportFilesBtn.setDisable(true);
             }
 
@@ -187,109 +241,6 @@ public class RegionMassAdderController {
             e.printStackTrace();
         } finally {
             processFilesBtn.setDisable(false);
-        }
-    }
-
-    @FXML
-    private void handleAddRegionColumn() {
-        if (processedResults == null || processedResults.isEmpty()) {
-            statusLabel.setText("No processed files to add Region column to.");
-            statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            return;
-        }
-
-        try {
-            File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-            if (selectedFile == null) {
-                statusLabel.setText("Please select a file from the list.");
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                return;
-            }
-
-            RegionMassAdderService.FileProcessResult result = processedResults.stream()
-                    .filter(r -> r.getFileName().equals(selectedFile.getName()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (result == null) {
-                statusLabel.setText("No processed result found for selected file.");
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                return;
-            }
-
-            regionService.addRegionColumn(result);
-            currentResult = result;
-
-            // Clear and refresh preview
-            previewTable.getItems().clear();
-            previewTable.getColumns().clear();
-            displayPreview(result);
-
-            statusLabel.setText("✓ Region column added to " + selectedFile.getName() +
-                    ". Use 'Populate Region Column' to fill with region data or 'Export Files' to save.");
-            statusLabel.setStyle("-fx-text-fill: #28a745;");
-
-            exportFilesBtn.setDisable(false);
-
-        } catch (Exception e) {
-            statusLabel.setText("Error adding Region column: " + e.getMessage());
-            statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handlePopulateRegionColumn() {
-        if (processedResults == null || processedResults.isEmpty()) {
-            statusLabel.setText("No processed files to populate Region column.");
-            statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            return;
-        }
-
-        try {
-            File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-            if (selectedFile == null) {
-                statusLabel.setText("Please select a file from the list.");
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                return;
-            }
-
-            RegionMassAdderService.FileProcessResult result = processedResults.stream()
-                    .filter(r -> r.getFileName().equals(selectedFile.getName()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (result == null) {
-                statusLabel.setText("No processed result found for selected file.");
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                return;
-            }
-
-            boolean hasRegion = result.getHeaders().stream().anyMatch(h -> h.equals("Region"));
-            if (!hasRegion) {
-                statusLabel.setText("No Region column found. Click 'Add Region Column' first.");
-                statusLabel.setStyle("-fx-text-fill: #ffc107;");
-                return;
-            }
-
-            regionService.populateRegionColumn(result);
-            currentResult = result;
-
-            // Clear and refresh preview
-            previewTable.getItems().clear();
-            previewTable.getColumns().clear();
-            displayPreview(result);
-
-            statusLabel.setText("✓ Region column populated for " + selectedFile.getName() +
-                    " using country mappings. Use 'Export Files' to save.");
-            statusLabel.setStyle("-fx-text-fill: #28a745;");
-
-            exportFilesBtn.setDisable(false);
-
-        } catch (Exception e) {
-            statusLabel.setText("Error populating Region column: " + e.getMessage());
-            statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            e.printStackTrace();
         }
     }
 
@@ -362,34 +313,57 @@ public class RegionMassAdderController {
         }
     }
 
-    private void displayPreview(RegionMassAdderService.FileProcessResult result) {
+    /**
+     * Display preview for a specific sheet
+     */
+    private void displaySheetPreview(RegionMassAdderService.FileProcessResult result, String sheetName) {
         if (result == null || !result.isSuccess()) {
             previewTable.getItems().clear();
             previewTable.getColumns().clear();
             return;
         }
 
-        List<Map<String, String>> data = result.getPreviewData();
+        // Get the specific sheet data
+        RegionMassAdderService.SheetData sheetData = result.getSheetsData().get(sheetName);
+        if (sheetData == null) {
+            previewTable.getItems().clear();
+            previewTable.getColumns().clear();
+            statusLabel.setText("Sheet '" + sheetName + "' not found.");
+            statusLabel.setStyle("-fx-text-fill: #ffc107;");
+            return;
+        }
+
+        List<Map<String, String>> data = sheetData.getPreviewData();
         if (data == null || data.isEmpty()) {
             previewTable.getItems().clear();
             previewTable.getColumns().clear();
-            statusLabel.setText("No data to preview.");
-            statusLabel.setStyle("-fx-text-fill: #ffc107;");
+            rowCountLabel.setText("0 rows");
             return;
         }
 
         previewTable.getItems().clear();
         previewTable.getColumns().clear();
 
-        List<String> headers = new java.util.ArrayList<>(data.get(0).keySet());
+        List<String> headers = new java.util.ArrayList<>(sheetData.getHeaders());
 
+        // Calculate total width and column sizes based on content
         for (String header : headers) {
             TableColumn<Map<String, String>, String> column = new TableColumn<>(header);
             column.setCellValueFactory(cellData ->
                     new SimpleStringProperty(cellData.getValue().getOrDefault(header, ""))
             );
 
-            double columnWidth = Math.max(120, Math.min(200, header.length() * 10 + 40));
+            // Calculate column width based on content
+            int maxLength = header.length();
+            for (Map<String, String> row : data) {
+                String value = row.getOrDefault(header, "");
+                if (value != null && value.length() > maxLength) {
+                    maxLength = value.length();
+                }
+            }
+
+            // Width = 8 pixels per character + padding (min 120, max 350)
+            double columnWidth = Math.min(Math.max(120, maxLength * 8 + 40), 350);
             column.setPrefWidth(columnWidth);
             column.setMinWidth(80);
             column.setResizable(true);
@@ -402,7 +376,12 @@ public class RegionMassAdderController {
         previewTable.setItems(observableData);
 
         previewTable.refresh();
-        previewTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Ensure UNCONSTRAINED_RESIZE_POLICY is set for horizontal scrolling
+        previewTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+
+        // Update row count label
+        rowCountLabel.setText(sheetData.getFullData().size() + " rows (showing " + data.size() + ")");
     }
 
     private void updateCountLabels() {

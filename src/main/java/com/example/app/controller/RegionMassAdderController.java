@@ -1,6 +1,6 @@
 package com.example.app.controller;
 
-import com.example.app.service.RegionMassAdderService;
+import com.example.app.service.addTools.regions.RegionMassAdderService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

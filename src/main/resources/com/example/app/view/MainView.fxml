@@ -180,27 +180,10 @@
             </HBox>
         </Tab>
 
+        <!-- AI Review Tab - Chat Interface -->
         <!-- AI Review Tab -->
         <Tab text="AI Review">
-            <VBox spacing="20">
-                <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="LLM Data Repair Service" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
-                </HBox>
-                <Separator/>
-                <VBox spacing="10" alignment="CENTER" VBox.vgrow="ALWAYS">
-                    <Label text="Use the Llama-powered AI Agent to scan and auto-correct messy data rows."
-                           style="-fx-font-size: 14; -fx-text-fill: #495057;"/>
-                    <Button fx:id="aiReviewBtn" text="Start AI Data Review" onAction="#handleAIReview"
-                            style="-fx-base: #6f42c1; -fx-text-fill: white; -fx-padding: 10 20 10 20; -fx-font-size: 14;"/>
-                    <ProgressBar fx:id="aiProgressBar" prefWidth="400" visible="false"/>
-                    <Label fx:id="aiStatusLabel" text="Ready" visible="false" style="-fx-text-fill: #6c757d;"/>
-                </VBox>
-                <Separator/>
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <CheckBox fx:id="aiAutoApplyCheck" text="Auto-apply high confidence corrections" selected="true"/>
-                </HBox>
-            </VBox>
+            <fx:include source="AiChatVIew.fxml"/>
         </Tab>
 
         <!-- New Dashboard Tab -->
@@ -297,6 +280,23 @@
                                 style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
                             <tooltip>
                                 <Tooltip text="Open Invoice List Updater tool"/>
+                            </tooltip>
+                        </Button>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="15" style="-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 2);">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="🌍" style="-fx-font-size: 32;"/>
+                        <VBox spacing="5" HBox.hgrow="ALWAYS">
+                            <Label text="Country Analyser" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #212529;"/>
+                            <Label text="Analyse country distributions in 'FY data' and 'UGPG data' sheets. Counts unique countries and displays the top 10 for each sheet."
+                                   style="-fx-font-size: 12; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+                        </VBox>
+                        <Button text="Open Tool" onAction="#handleCountryAnalyser"
+                                style="-fx-base: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20 10 20;">
+                            <tooltip>
+                                <Tooltip text="Open Country Analyser tool"/>
                             </tooltip>
                         </Button>
                     </HBox>

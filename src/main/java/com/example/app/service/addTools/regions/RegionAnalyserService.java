@@ -1,4 +1,4 @@
-package com.example.app.service;
+package com.example.app.service.addTools.regions;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -8,9 +8,6 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
 
 public class RegionAnalyserService {
 
@@ -152,9 +149,9 @@ public class RegionAnalyserService {
                     System.out.println(DEBUG_PREFIX + " analyseFiles: ✓ Found 'FY data' sheet!");
                     totalFYSheetsFound++;
                     System.out.println(DEBUG_PREFIX + " analyseFiles: Processing FY data sheet for both years...");
-                    int rowsProcessed = processSheet(fySheet, regionDataMap, year1, true);
+                    int rowsProcessed = processSheet(fySheet, regionDataMap, year1, year2, true);
                     System.out.println(DEBUG_PREFIX + " analyseFiles:   - Processed " + rowsProcessed + " rows for " + year1);
-                    rowsProcessed = processSheet(fySheet, regionDataMap, year2, true);
+                    rowsProcessed = processSheet(fySheet, regionDataMap, year2, year1, true);
                     System.out.println(DEBUG_PREFIX + " analyseFiles:   - Processed " + rowsProcessed + " rows for " + year2);
                     totalRowsProcessed += rowsProcessed * 2;
                 } else {
@@ -166,9 +163,9 @@ public class RegionAnalyserService {
                     System.out.println(DEBUG_PREFIX + " analyseFiles: ✓ Found 'UGPG data' sheet!");
                     totalUGPGSheetsFound++;
                     System.out.println(DEBUG_PREFIX + " analyseFiles: Processing UGPG data sheet for both years...");
-                    int rowsProcessed = processSheet(ugpgSheet, regionDataMap, year1, false);
+                    int rowsProcessed = processSheet(ugpgSheet, regionDataMap, year1, year2, false);
                     System.out.println(DEBUG_PREFIX + " analyseFiles:   - Processed " + rowsProcessed + " rows for " + year1);
-                    rowsProcessed = processSheet(ugpgSheet, regionDataMap, year2, false);
+                    rowsProcessed = processSheet(ugpgSheet, regionDataMap, year2, year1, false);
                     System.out.println(DEBUG_PREFIX + " analyseFiles:   - Processed " + rowsProcessed + " rows for " + year2);
                     totalRowsProcessed += rowsProcessed * 2;
                 } else {
@@ -236,10 +233,11 @@ public class RegionAnalyserService {
     }
 
     // ===== PROCESS SHEET =====
-    private int processSheet(Sheet sheet, Map<String, RegionData> regionDataMap, String year, boolean isFoundation) throws IOException {
+    private int processSheet(Sheet sheet, Map<String, RegionData> regionDataMap, String currentYear, String otherYear, boolean isFoundation) throws IOException  {
         System.out.println(DEBUG_PREFIX + " processSheet: STARTING");
         System.out.println(DEBUG_PREFIX + " processSheet: Sheet name = '" + sheet.getSheetName() + "'");
-        System.out.println(DEBUG_PREFIX + " processSheet: Year = '" + year + "'");
+        System.out.println(DEBUG_PREFIX + " processSheet: Current Year = '" + currentYear + "'");
+        System.out.println(DEBUG_PREFIX + " processSheet: Other Year = '" + otherYear + "'");
         System.out.println(DEBUG_PREFIX + " processSheet: Is Foundation = " + isFoundation);
         System.out.println(DEBUG_PREFIX + " processSheet: Sheet last row = " + sheet.getLastRowNum());
 
@@ -304,7 +302,7 @@ public class RegionAnalyserService {
         Map<String, Integer> regionCounts = new HashMap<>();
         Map<String, Integer> decisionCounts = new HashMap<>();
 
-        System.out.println(DEBUG_PREFIX + " processSheet: Processing data rows for year: " + year);
+        System.out.println(DEBUG_PREFIX + " processSheet: Processing data rows for year: " + currentYear);
 
         for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
             Row row = sheet.getRow(rowIndex);
@@ -342,9 +340,26 @@ public class RegionAnalyserService {
                 }
             }
 
-            if (!appYear.equals(year)) {
-                rowsSkippedWrongYear++;
-                continue;
+// Determine if this is Year 1 (the smaller year)
+            int currentYearInt = Integer.parseInt(currentYear);
+            int otherYearInt = Integer.parseInt(otherYear);
+            int appYearInt = Integer.parseInt(appYear);
+
+// Check if this is Year 1 (cumulative) or Year 2 (exact match)
+            boolean isYear1 = currentYearInt < otherYearInt;
+
+            if (isYear1) {
+                // Year 1: Include all years <= currentYear
+                if (appYearInt > currentYearInt) {
+                    rowsSkippedWrongYear++;
+                    continue;
+                }
+            } else {
+                // Year 2: Exact match only
+                if (appYearInt != currentYearInt) {
+                    rowsSkippedWrongYear++;
+                    continue;
+                }
             }
 
             rowsProcessed++;
@@ -361,13 +376,13 @@ public class RegionAnalyserService {
             boolean isAccept = isAccept(decision);
 
             if (isFoundation) {
-                data.addFoundationApp(year);
-                if (isOffer) data.addFoundationOffer(year);
-                if (isAccept) data.addFoundationAccept(year);
+                data.addFoundationApp(currentYear);
+                if (isOffer) data.addFoundationOffer(currentYear);
+                if (isAccept) data.addFoundationAccept(currentYear);
             } else {
-                data.addUgpgApp(year);
-                if (isOffer) data.addUgpgOffer(year);
-                if (isAccept) data.addUgpgAccept(year);
+                data.addUgpgApp(currentYear);
+                if (isOffer) data.addUgpgOffer(currentYear);
+                if (isAccept) data.addUgpgAccept(currentYear);
             }
 
             if (rowsProcessed <= 10) {
@@ -378,7 +393,7 @@ public class RegionAnalyserService {
         }
 
         System.out.println(DEBUG_PREFIX + " processSheet: ========================================");
-        System.out.println(DEBUG_PREFIX + " processSheet: SUMMARY for year " + year);
+        System.out.println(DEBUG_PREFIX + " processSheet: SUMMARY for year " + currentYear);
         System.out.println(DEBUG_PREFIX + " processSheet:   Rows processed (valid data): " + rowsProcessed);
         System.out.println(DEBUG_PREFIX + " processSheet:   Rows skipped (wrong year): " + rowsSkippedWrongYear);
         System.out.println(DEBUG_PREFIX + " processSheet:   Rows skipped (invalid region): " + rowsSkippedInvalidRegion);
@@ -402,7 +417,7 @@ public class RegionAnalyserService {
                     .forEach(e -> System.out.println(DEBUG_PREFIX + " processSheet:   " + e.getKey() + ": " + e.getValue() + " rows"));
         }
 
-        System.out.println(DEBUG_PREFIX + " processSheet: COMPLETE - Processed " + rowsProcessed + " valid rows for year " + year);
+        System.out.println(DEBUG_PREFIX + " processSheet: COMPLETE - Processed " + rowsProcessed + " valid rows for year " + currentYear);
         System.out.println(DEBUG_PREFIX + " processSheet: ========================================");
         return rowsProcessed;
     }
@@ -410,9 +425,22 @@ public class RegionAnalyserService {
     private boolean isOffer(String decision) {
         if (decision == null) return false;
         String d = decision.trim().toUpperCase();
-        if (d.equals("UO") || d.equals("CO") || d.equals("UA") || d.equals("CA")) return true;
+
+        // All decision codes that count as offers
+        if (d.equals("UO") || d.equals("CO") || d.equals("D") ||
+                d.equals("DA") || d.equals("RA") || d.equals("UA") ||
+                d.equals("CA") || d.equals("WA")) {
+            return true;
+        }
+
+        // Full words
+        if (d.equals("OFFER") || d.equals("OFFERED")) return true;
+        if (d.equals("CONDITIONAL OFFER") || d.equals("UNCONDITIONAL OFFER")) return true;
+
         String lower = d.toLowerCase();
-        return lower.contains("offer") || lower.contains("unconditional") || lower.contains("conditional");
+        return lower.contains("offer") ||
+                lower.contains("unconditional") ||
+                lower.contains("conditional");
     }
 
     private boolean isAccept(String decision) {

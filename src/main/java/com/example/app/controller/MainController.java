@@ -2,10 +2,12 @@ package com.example.app.controller;
 
 import com.example.app.model.*;
 import com.example.app.service.*;
-import com.example.app.service.DashboardExportService;
+import com.example.app.service.chartDashboard.DashboardExportService;
 import com.example.app.service.GeographicValidationService.ValidationError;
+import com.example.app.service.aiUsages.QwenAgentService;
+import com.example.app.service.chartDashboard.PivotDataService;
+import com.example.app.service.chartDashboard.PowerPointExportService;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -97,7 +99,7 @@ public class MainController {
     private final PowerPointExportService exportService = new PowerPointExportService();
     private final FilterStateRegistry filterRegistry = new FilterStateRegistry();
     private final GeographicValidationService geoValidationService = new GeographicValidationService();
-    private final GroqAgentService groqService = new GroqAgentService();
+    private final QwenAgentService qwenService = new QwenAgentService();
 
     private AppDataModel model;
     private ObservableList<Map<String, String>> masterData = FXCollections.observableArrayList();
@@ -107,6 +109,8 @@ public class MainController {
     private List<ValidationError> currentErrors = new ArrayList<>();
     private final PivotDataService pivotService = new PivotDataService();
     private List<PivotDataService.PivotResult> currentPivotResults = new ArrayList<>();
+
+    private AiChatController aiChatController;
 
     // Dashboard items
     private final ObservableList<DashboardItem> dashboardItems = FXCollections.observableArrayList();
@@ -170,6 +174,7 @@ public class MainController {
 
         // Setup dashboard
         setupDashboard();
+        loadAIReviewTab();
 
         // Disable chart update buttons initially
         // They will be enabled when data is loaded
@@ -614,7 +619,7 @@ public class MainController {
                     updateProgress(rowIndex + 1, totalRows);
 
                     try {
-                        Map<String, String> corrections = groqService.suggestCorrections(row).get();
+                        Map<String, String> corrections = qwenService.suggestCorrections(row).get();
 
                         if (corrections != null && !corrections.isEmpty()) {
                             System.out.println(">>> AI SUCCESS: Applied corrections to Row " + rowIndex);
@@ -1326,4 +1331,70 @@ public class MainController {
             e.printStackTrace();
         }
     }
+
+    @FXML
+    private void initializeAIReviewTab() {
+        // This will be called when the AI Review tab is selected
+        mainTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if ("AI Review".equals(newTab.getText())) {
+                // Check if the chat controller is already initialized
+                if (aiChatController == null) {
+                    // Find the chat controller
+                    // The controller is loaded from FXML, but we can access it via the tab's content
+                    Node tabContent = newTab.getContent();
+                    if (tabContent != null) {
+                        // We need a way to get the controller - we'll set it when loading
+                    }
+                }
+            }
+        });
+    }
+
+    // In MainController.java - replace the loadAIReviewTab() method
+    private void loadAIReviewTab() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/app/view/AIChatView.fxml"));
+            Parent chatView = loader.load();
+            aiChatController = loader.getController();
+
+            // CRITICAL: Set the main controller reference BEFORE any chat messages are sent
+            aiChatController.setMainController(this);
+
+            // Find the AI Review tab and set its content
+            for (Tab tab : mainTabPane.getTabs()) {
+                if ("AI Review".equals(tab.getText())) {
+                    tab.setContent(chatView);
+                    break;
+                }
+            }
+
+            System.out.println("✅ AI Chat Controller initialized with MainController reference");
+        } catch (Exception e) {
+            showError("AI Chat Error", "Failed to load AI Chat: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public FilteredList<Map<String, String>> getFilteredData() {
+        return filteredData;
+    }
+
+    @FXML
+    private void handleCountryAnalyser() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/app/view/CountryAnalyserView.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.setTitle("🌍 Country Analyser");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1000, 600));
+            stage.showAndWait();
+
+        } catch (Exception e) {
+            showError("Country Analyser", "Could not open Country Analyser: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

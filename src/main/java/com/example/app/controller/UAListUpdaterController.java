@@ -1,8 +1,7 @@
 package com.example.app.controller;
 
-import com.example.app.service.UAListUpdaterService;
-import com.example.app.service.UAListUpdaterService.UAUpdateResult;
-import com.example.app.service.LocalLLMService;
+import com.example.app.service.addTools.UALists.UAListUpdaterService;
+import com.example.app.service.addTools.UALists.UAListUpdaterService.UAUpdateResult;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -13,7 +12,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,18 +34,15 @@ public class UAListUpdaterController {
     @FXML private Label totalNewLabel;
     @FXML private Label totalExistingLabel;
     @FXML private Label totalOverallLabel;
-    @FXML private CheckBox enableLLMCheckbox;
-    @FXML private ProgressBar llmProgressBar;
-    @FXML private Label llmStatusLabel;
+
+    // REMOVED: enableLLMCheckbox, llmProgressBar, llmStatusLabel, LocalLLMService
 
     private File mainDatabaseFile;
     private File existingUAListFile;
     private UAUpdateResult updateResult;
     private final UAListUpdaterService service = new UAListUpdaterService();
-    private final LocalLLMService llmService = new LocalLLMService();
     private List<Map<String, String>> loadedUAListData = null;
     private List<String> loadedUAListHeaders = null;
-    private boolean isLLMProcessing = false;
 
     @FXML
     public void initialize() {
@@ -91,24 +86,9 @@ public class UAListUpdaterController {
         mainContainer.setManaged(false);
         generateBtn.setDisable(true);
         exportBtn.setDisable(true);
-        enableLLMCheckbox.setVisible(false);
-        llmProgressBar.setVisible(false);
-
-        // Set LLM status
-        updateLLMStatus();
 
         statusLabel.setText("Select an option to begin.");
         statusLabel.setStyle("-fx-text-fill: #6c757d;");
-    }
-
-    private void updateLLMStatus() {
-        if (llmService.isAvailable()) {
-            llmStatusLabel.setText("LLM: ✅ Ready");
-            llmStatusLabel.setStyle("-fx-text-fill: #28a745;");
-        } else {
-            llmStatusLabel.setText("LLM: ⚠️ Not available");
-            llmStatusLabel.setStyle("-fx-text-fill: #ffc107;");
-        }
     }
 
     @FXML
@@ -189,7 +169,6 @@ public class UAListUpdaterController {
     private void checkFilesLoaded() {
         if (mainDatabaseFile != null && existingUAListFile != null) {
             generateBtn.setDisable(false);
-            enableLLMCheckbox.setVisible(true);
         }
     }
 
@@ -216,7 +195,6 @@ public class UAListUpdaterController {
             statusLabel.setStyle("-fx-text-fill: #17a2b8;");
             generateBtn.setDisable(true);
             exportBtn.setDisable(true);
-            enableLLMCheckbox.setDisable(true);
 
             updateResult = service.processFiles(mainDatabaseFile, existingUAListFile, intake);
 
@@ -227,24 +205,16 @@ public class UAListUpdaterController {
             totalExistingLabel.setText("Existing: " + updateResult.getTotalExisting());
             totalOverallLabel.setText("Total: " + updateResult.getAllUAStudents().size());
 
-            // Check if LLM should run automatically (checkbox is checked AND there are new students)
-            if (enableLLMCheckbox.isSelected() && updateResult.getTotalNew() > 0 && llmService.isAvailable()) {
-                // Auto-run LLM correction
-                runLLMCorrection();
+            if (updateResult.getTotalNew() == 0) {
+                statusLabel.setText("✓ No new students found for " + intake + ". UA List is up to date.");
+                statusLabel.setStyle("-fx-text-fill: #28a745;");
             } else {
-                // Just show results
-                if (updateResult.getTotalNew() == 0) {
-                    statusLabel.setText("✓ No new students found for " + intake + ". UA List is up to date.");
-                    statusLabel.setStyle("-fx-text-fill: #28a745;");
-                } else {
-                    statusLabel.setText("✓ Found " + updateResult.getTotalNew() + " new student(s). " +
-                            (enableLLMCheckbox.isSelected() ? "Running LLM correction..." : "Ready for export."));
-                    statusLabel.setStyle("-fx-text-fill: #28a745;");
-                }
-                exportBtn.setDisable(false);
-                enableLLMCheckbox.setDisable(false);
-                generateBtn.setDisable(false);
+                statusLabel.setText("✓ Found " + updateResult.getTotalNew() + " new student(s). Ready for export.");
+                statusLabel.setStyle("-fx-text-fill: #28a745;");
             }
+
+            exportBtn.setDisable(false);
+            generateBtn.setDisable(false);
 
         } catch (Exception e) {
             statusLabel.setText("Error: " + e.getMessage());
@@ -256,93 +226,7 @@ public class UAListUpdaterController {
                 displayUAListPreview(loadedUAListData, loadedUAListHeaders);
             }
             generateBtn.setDisable(false);
-            enableLLMCheckbox.setDisable(false);
         }
-    }
-
-    private void runLLMCorrection() {
-        if (updateResult == null || updateResult.getTotalNew() == 0) {
-            return;
-        }
-
-        isLLMProcessing = true;
-        List<Map<String, String>> recordsToProcess = updateResult.getNewUAStudents();
-
-        statusLabel.setText("🤖 Running LLM correction on " + recordsToProcess.size() + " new records...");
-        statusLabel.setStyle("-fx-text-fill: #6f42c1;");
-        llmProgressBar.setVisible(true);
-        llmProgressBar.setProgress(0);
-        llmStatusLabel.setText("Processing " + recordsToProcess.size() + " records...");
-        llmStatusLabel.setStyle("-fx-text-fill: #6f42c1;");
-
-        llmService.processUAListWithLLM(
-                recordsToProcess,
-                updateResult.getHeaders(),
-                updateResult.getIntake()
-        ).thenAccept(correctedRecords -> {
-            javafx.application.Platform.runLater(() -> {
-                try {
-                    // Update the result with corrected records
-                    updateResult.getNewUAStudents().clear();
-                    updateResult.getNewUAStudents().addAll(correctedRecords);
-
-                    // Rebuild the combined list
-                    List<Map<String, String>> allUAStudents = new ArrayList<>();
-                    allUAStudents.addAll(updateResult.getExistingUAStudents());
-                    allUAStudents.addAll(updateResult.getNewUAStudents());
-                    updateResult.getAllUAStudents().clear();
-                    updateResult.getAllUAStudents().addAll(allUAStudents);
-
-                    // Refresh the display
-                    displayPreview(updateResult);
-                    displayNewAdditions(updateResult);
-
-                    // Update totals
-                    totalNewLabel.setText("New: " + updateResult.getTotalNew());
-                    totalExistingLabel.setText("Existing: " + updateResult.getTotalExisting());
-                    totalOverallLabel.setText("Total: " + updateResult.getAllUAStudents().size());
-
-                    statusLabel.setText("✅ LLM correction completed! " + correctedRecords.size() + " records processed.");
-                    statusLabel.setStyle("-fx-text-fill: #28a745;");
-                    llmStatusLabel.setText("✅ Complete - " + correctedRecords.size() + " records processed");
-                    llmStatusLabel.setStyle("-fx-text-fill: #28a745;");
-                    llmProgressBar.setVisible(false);
-
-                    exportBtn.setDisable(false);
-                    enableLLMCheckbox.setDisable(false);
-                    generateBtn.setDisable(false);
-                    isLLMProcessing = false;
-
-                } catch (Exception e) {
-                    statusLabel.setText("Error updating with LLM results: " + e.getMessage());
-                    statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                    System.err.println("Error updating with LLM results: " + e.getMessage());
-                    e.printStackTrace(System.err);
-                    llmProgressBar.setVisible(false);
-                    exportBtn.setDisable(false);
-                    enableLLMCheckbox.setDisable(false);
-                    generateBtn.setDisable(false);
-                    isLLMProcessing = false;
-                }
-            });
-        }).exceptionally(throwable -> {
-            javafx.application.Platform.runLater(() -> {
-                statusLabel.setText("❌ LLM processing failed: " + throwable.getMessage());
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-                llmStatusLabel.setText("❌ Error: " + throwable.getMessage());
-                llmStatusLabel.setStyle("-fx-text-fill: #dc3545;");
-                llmProgressBar.setVisible(false);
-                exportBtn.setDisable(false);
-                enableLLMCheckbox.setDisable(false);
-                generateBtn.setDisable(false);
-                isLLMProcessing = false;
-
-                // Keep the original data
-                displayPreview(updateResult);
-                displayNewAdditions(updateResult);
-            });
-            return null;
-        });
     }
 
     @FXML
@@ -350,13 +234,6 @@ public class UAListUpdaterController {
         if (updateResult == null) {
             statusLabel.setText("No data to export. Generate UA List first.");
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            return;
-        }
-
-        // If LLM is still processing, don't allow export
-        if (isLLMProcessing) {
-            statusLabel.setText("⚠️ LLM correction is still running. Please wait.");
-            statusLabel.setStyle("-fx-text-fill: #ffc107;");
             return;
         }
 
@@ -482,6 +359,7 @@ public class UAListUpdaterController {
         ObservableList<Map<String, String>> observableData = FXCollections.observableArrayList();
         observableData.addAll(data);
         previewTable.setItems(observableData);
+        previewTable.refresh();
     }
 
     private void displayNewAdditions(UAUpdateResult result) {

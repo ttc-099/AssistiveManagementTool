@@ -66,7 +66,7 @@
 
         <Separator/>
 
-        <!-- Intake Selection -->
+        <!-- Intake Selection (LLM Checkbox REMOVED) -->
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Label text="Select Intake:" style="-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #003366;"/>
             <ComboBox fx:id="intakeSelector" prefWidth="150"/>
@@ -75,14 +75,6 @@
                     disable="true" style="-fx-base: #28a745; -fx-text-fill: white;"/>
             <Button fx:id="exportBtn" text="Export UA List" onAction="#handleExport"
                     disable="true" style="-fx-base: #003366; -fx-text-fill: white;"/>
-            <CheckBox fx:id="enableLLMCheckbox" text="Enable LLM Correction"
-                      style="-fx-text-fill: #6f42c1; -fx-font-weight: bold;"
-                      visible="false"/>
-        </HBox>
-
-        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 2 0 0 0;">
-            <ProgressBar fx:id="llmProgressBar" prefWidth="200" visible="false" style="-fx-accent: #6f42c1;"/>
-            <Label fx:id="llmStatusLabel" text="LLM: Idle" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
         </HBox>
 
         <Separator/>

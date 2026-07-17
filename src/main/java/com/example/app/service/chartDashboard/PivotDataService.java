@@ -1,4 +1,4 @@
-package com.example.app.service;
+package com.example.app.service.chartDashboard;
 
 import java.util.*;
 import java.util.stream.Collectors;

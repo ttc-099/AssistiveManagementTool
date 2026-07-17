@@ -1,4 +1,4 @@
-package com.example.app.service;
+package com.example.app.service.chartDashboard;
 
 import com.example.app.controller.MainController.DashboardItem;
 import javafx.application.Platform;

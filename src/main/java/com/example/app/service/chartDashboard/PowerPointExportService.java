@@ -1,4 +1,4 @@
-package com.example.app.service;
+package com.example.app.service.chartDashboard;
 
 import com.example.app.controller.MainController;
 import org.apache.poi.xslf.usermodel.*;
@@ -13,11 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.sl.usermodel.PictureData;
-import org.apache.poi.sl.usermodel.TextParagraph;
-import org.apache.poi.util.IOUtils;
 
 import java.awt.geom.Rectangle2D;
-import java.io.*;
 
 public class PowerPointExportService {
 

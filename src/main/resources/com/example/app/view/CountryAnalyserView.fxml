@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox fx:id="mainContainer" spacing="10" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.app.controller.CountryAnalyserController"
+      style="-fx-background-color: #f8f9fa; -fx-padding: 20;">
+
+    <!-- Header -->
+    <Label text="🌍 Country Analyser" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #003366;"/>
+    <Separator/>
+
+    <!-- File Selection -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Button text="📂 Load Excel File" onAction="#handleLoadFile" style="-fx-base: #003366; -fx-text-fill: white;"/>
+        <Button text="🗑️ Clear" onAction="#handleClear" style="-fx-base: #dc3545; -fx-text-fill: white;"/>
+        <Button fx:id="analyseBtn" text="🔍 Analyse" onAction="#handleAnalyse" style="-fx-base: #28a745; -fx-text-fill: white;"/>
+        <Button fx:id="exportBtn" text="📊 Export Report" onAction="#handleExport" style="-fx-base: #ffc107; -fx-text-fill: black;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="selectedFileLabel" text="None" style="-fx-text-fill: #6c757d; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <!-- Progress -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <ProgressBar fx:id="progressBar" prefWidth="200" visible="false"/>
+        <Label fx:id="progressLabel" text="" visible="false" style="-fx-text-fill: #17a2b8;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Split View: FY Data | UGPG Data -->
+    <SplitPane dividerPositions="0.5" VBox.vgrow="ALWAYS">
+        <!-- FY Data -->
+        <VBox spacing="5" style="-fx-padding: 10;">
+            <Label text="🎓 FY Data" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0072B2;"/>
+            <TableView fx:id="fyTable" VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 5;">
+                <columns>
+                    <TableColumn fx:id="fyRankCol" text="#" prefWidth="50" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="fyCountryCol" text="Country" prefWidth="200"/>
+                    <TableColumn fx:id="fyCountCol" text="Count" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
+                </columns>
+            </TableView>
+            <HBox spacing="15">
+                <Label fx:id="fyTotalLabel" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+                <Label fx:id="fyUniqueLabel" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+            </HBox>
+        </VBox>
+
+        <!-- UGPG Data -->
+        <VBox spacing="5" style="-fx-padding: 10;">
+            <Label text="📚 UGPG Data" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #28A745;"/>
+            <TableView fx:id="ugpgTable" VBox.vgrow="ALWAYS" style="-fx-border-color: #dee2e6; -fx-border-radius: 5;">
+                <columns>
+                    <TableColumn fx:id="ugpgRankCol" text="#" prefWidth="50" style="-fx-alignment: CENTER;"/>
+                    <TableColumn fx:id="ugpgCountryCol" text="Country" prefWidth="200"/>
+                    <TableColumn fx:id="ugpgCountCol" text="Count" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
+                </columns>
+            </TableView>
+            <HBox spacing="15">
+                <Label fx:id="ugpgTotalLabel" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+                <Label fx:id="ugpgUniqueLabel" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+            </HBox>
+        </VBox>
+    </SplitPane>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label fx:id="instructionLabel" text="💡 Double-click a country to see course breakdown"
+               style="-fx-text-fill: #6c757d; -fx-font-size: 12px;" visible="false"/>
+    </HBox>
+
+    <!-- Status Bar -->
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10 0 0 0;">
+        <Label fx:id="statusLabel" text="Ready" style="-fx-text-fill: #6c757d; -fx-font-size: 12px;"/>
+    </HBox>
+
+    <!-- Footer Buttons -->
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="✕ Close" onAction="#handleClose"/>
+    </HBox>
+</VBox>

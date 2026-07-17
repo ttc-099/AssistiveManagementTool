@@ -1,8 +1,8 @@
 package com.example.app.controller;
 
-import com.example.app.service.RegionAnalyserService;
-import com.example.app.service.RegionAnalyserService.AnalysisResult;
-import com.example.app.service.RegionAnalyserService.RegionData;
+import com.example.app.service.addTools.regions.RegionAnalyserService;
+import com.example.app.service.addTools.regions.RegionAnalyserService.AnalysisResult;
+import com.example.app.service.addTools.regions.RegionAnalyserService.RegionData;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;

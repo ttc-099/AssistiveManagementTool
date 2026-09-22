@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.CheckComboBox?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="dataViewRoot" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.app.controller.DataController"
+      spacing="10">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <!-- ===== SHEET SELECTOR ROW ===== -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Label text="📄 Sheet:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="sheetSelector" onAction="#handleSheetChange"
+                  promptText="Select Sheet" prefWidth="180"
+                  style="-fx-background-color: white; -fx-border-color: #ced4da; -fx-border-radius: 4;"/>
+        <Separator orientation="VERTICAL" prefHeight="25"/>
+        <Label text="📊 Rows:" style="-fx-font-weight: bold;"/>
+        <Label fx:id="rowCountLabel" text="0" style="-fx-text-fill: #28a745;"/>
+        <Label text="Columns:" style="-fx-font-weight: bold;"/>
+        <Label fx:id="colCountLabel" text="0" style="-fx-text-fill: #007bff;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="🔄 Refresh" onAction="#handleRefreshData"
+                style="-fx-base: #6c757d; -fx-text-fill: white;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- ===== FILTER ROW ===== -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Columns:" style="-fx-font-weight: bold;"/>
+        <CheckComboBox fx:id="columnSelector" prefWidth="200"/>
+
+        <CheckBox fx:id="selectAllColumnsCheckBox" text="Select All" selected="true"
+                  style="-fx-font-weight: bold; -fx-text-fill: #0078d4;"/>
+
+        <Separator orientation="VERTICAL" prefHeight="20"/>
+
+        <Label text="Start:" style="-fx-font-weight: bold;"/>
+        <DatePicker fx:id="startDatePicker" prefWidth="120"/>
+        <Label text="End:" style="-fx-font-weight: bold;"/>
+        <DatePicker fx:id="endDatePicker" prefWidth="120"/>
+    </HBox>
+
+    <!-- ===== SEARCH ROW ===== -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="🔍 Search:" style="-fx-font-weight: bold;"/>
+        <TextField fx:id="searchField" promptText="Type to filter..." HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <!-- ===== DATA TABLE ===== -->
+    <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+        <TableView fx:id="dataTable" style="-fx-selection-bar: #cfe2f3; -fx-selection-bar-non-focused: #e8f0f7;"/>
+    </ScrollPane>
+
+    <!-- ===== STATUS BAR ===== -->
+    <HBox spacing="15" alignment="CENTER_LEFT">
+        <Label fx:id="sheetStatusLabel" text="Sheet: None" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+        <Label fx:id="rowStatusLabel" text="Rows: 0" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+        <Label fx:id="colStatusLabel" text="Columns: 0" style="-fx-text-fill: #6c757d; -fx-font-size: 11px;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="saveStatusLabel" text="" style="-fx-text-fill: #28a745; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+    </HBox>
+</VBox>

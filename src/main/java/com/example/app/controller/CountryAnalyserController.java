@@ -455,20 +455,22 @@ public class CountryAnalyserController {
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
         );
-        fileChooser.setInitialFileName("Country_Analysis.xlsx");
+        fileChooser.setInitialFileName("Country_Analysis_Summary.xlsx");
 
         File file = fileChooser.showSaveDialog(null);
         if (file != null) {
             try {
-                statusLabel.setText("Exporting...");
+                statusLabel.setText("Exporting summary...");
                 statusLabel.setStyle("-fx-text-fill: #17a2b8;");
                 exportBtn.setDisable(true);
 
-                service.exportReport(analysisResults, file);
+                // ===== FIX: Call exportTop10Summary instead =====
+                service.exportTop10Summary(analysisResults, file);
 
-                statusLabel.setText("✓ Exported to: " + file.getName());
+                statusLabel.setText("✓ Exported top 10 summary to: " + file.getName());
                 statusLabel.setStyle("-fx-text-fill: #28a745;");
                 System.out.println(DEBUG_PREFIX + " ✓ Export completed: " + file.getAbsolutePath());
+
             } catch (Exception e) {
                 System.err.println(DEBUG_PREFIX + " ❌ Export error: " + e.getMessage());
                 e.printStackTrace();
@@ -508,5 +510,47 @@ public class CountryAnalyserController {
         System.out.println(DEBUG_PREFIX + " handleClose: Closing window");
         Stage stage = (Stage) statusLabel.getScene().getWindow();
         stage.close();
+    }
+
+    @FXML
+    private void handleExportFull() {
+        System.out.println(DEBUG_PREFIX + " handleExportFull: User clicked Export Full");
+
+        if (analysisResults == null || analysisResults.isEmpty()) {
+            statusLabel.setText("No data to export. Run analysis first.");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+        );
+        fileChooser.setInitialFileName("Country_Analysis_Full.xlsx");
+
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                statusLabel.setText("Exporting full report...");
+                statusLabel.setStyle("-fx-text-fill: #17a2b8;");
+                exportBtn.setDisable(true);
+
+                service.exportFullReport(analysisResults, file);
+
+                statusLabel.setText("✓ Full report exported to: " + file.getName());
+                statusLabel.setStyle("-fx-text-fill: #28a745;");
+                System.out.println(DEBUG_PREFIX + " ✓ Full export completed: " + file.getAbsolutePath());
+
+            } catch (Exception e) {
+                System.err.println(DEBUG_PREFIX + " ❌ Export error: " + e.getMessage());
+                e.printStackTrace();
+                statusLabel.setText("Error exporting: " + e.getMessage());
+                statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            } finally {
+                exportBtn.setDisable(false);
+            }
+        }
+
+
     }
 }

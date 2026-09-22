@@ -11,10 +11,16 @@ public class DataSanitizationService {
             "Country", "Region", "State", "Postcode", "City", "Nationality"
     ));
 
+    /**
+     * Sanitize a single value based on its header
+     * @param header The column header name
+     * @param value The value to sanitize
+     * @return Sanitized value
+     */
     public String sanitize(String header, String value) {
         if (value == null) return "";
-        
-        // White Space Stripping (Automatically .trim() all trailing and leading white space)
+
+        // White Space Stripping - trim all trailing and leading white space
         String sanitized = value.trim();
 
         // Proper Name Case Conversion for geographic/demographic columns
@@ -26,14 +32,22 @@ public class DataSanitizationService {
         return sanitized;
     }
 
+    /**
+     * Check if a header is a geographic/demographic column
+     */
     private boolean isGeographicHeader(String header) {
         if (header == null) return false;
         return GEOGRAPHIC_HEADERS.stream().anyMatch(h -> h.equalsIgnoreCase(header));
     }
 
+    /**
+     * Convert a string to Title Case (Proper Case)
+     * Example: "JOHOR BAHRU" → "Johor Bahru"
+     *          "johor bahru" → "Johor Bahru"
+     */
     private String toTitleCase(String input) {
         if (input == null || input.isEmpty()) return input;
-        
+
         return Arrays.stream(input.toLowerCase().split("\\s+"))
                 .filter(word -> !word.isEmpty())
                 .map(word -> Character.toUpperCase(word.charAt(0)) + word.substring(1))

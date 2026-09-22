@@ -19,7 +19,7 @@
         <Button text="📂 Load Excel File" onAction="#handleLoadFile" style="-fx-base: #003366; -fx-text-fill: white;"/>
         <Button text="🗑️ Clear" onAction="#handleClear" style="-fx-base: #dc3545; -fx-text-fill: white;"/>
         <Button fx:id="analyseBtn" text="🔍 Analyse" onAction="#handleAnalyse" style="-fx-base: #28a745; -fx-text-fill: white;"/>
-        <Button fx:id="exportBtn" text="📊 Export Report" onAction="#handleExport" style="-fx-base: #ffc107; -fx-text-fill: black;"/>
+        <Button fx:id="exportBtn" text="📊 Export Full Report" onAction="#handleExport" style="-fx-base: #ffc107; -fx-text-fill: black;"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="selectedFileLabel" text="None" style="-fx-text-fill: #6c757d; -fx-font-weight: bold;"/>
     </HBox>
@@ -41,7 +41,7 @@
                 <columns>
                     <TableColumn fx:id="fyRankCol" text="#" prefWidth="50" style="-fx-alignment: CENTER;"/>
                     <TableColumn fx:id="fyCountryCol" text="Country" prefWidth="200"/>
-                    <TableColumn fx:id="fyCountCol" text="Count" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
+                    <TableColumn fx:id="fyCountCol" text="Applications" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
                 </columns>
             </TableView>
             <HBox spacing="15">
@@ -57,7 +57,7 @@
                 <columns>
                     <TableColumn fx:id="ugpgRankCol" text="#" prefWidth="50" style="-fx-alignment: CENTER;"/>
                     <TableColumn fx:id="ugpgCountryCol" text="Country" prefWidth="200"/>
-                    <TableColumn fx:id="ugpgCountCol" text="Count" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
+                    <TableColumn fx:id="ugpgCountCol" text="Applications" prefWidth="80" style="-fx-alignment: CENTER_RIGHT;"/>
                 </columns>
             </TableView>
             <HBox spacing="15">
@@ -68,7 +68,7 @@
     </SplitPane>
 
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label fx:id="instructionLabel" text="💡 Double-click a country to see course breakdown"
+        <Label fx:id="instructionLabel" text="💡 Double-click a country to see course breakdown with Offers &amp; Acceptances"
                style="-fx-text-fill: #6c757d; -fx-font-size: 12px;" visible="false"/>
     </HBox>
 

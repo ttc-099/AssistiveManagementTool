@@ -1,6 +1,6 @@
 package com.example.app.service.chartDashboard;
 
-import com.example.app.controller.MainController.DashboardItem;
+import com.example.app.controller.DashboardController.DashboardItem;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Node;
@@ -298,14 +298,12 @@ public class DashboardExportService {
 
     private byte[] captureNodeAsImage(Node node) {
         try {
-            // Use CountDownLatch to properly wait for the snapshot on the UI thread
             CountDownLatch latch = new CountDownLatch(1);
             final WritableImage[] imageHolder = new WritableImage[1];
             final Exception[] errorHolder = new Exception[1];
 
             Platform.runLater(() -> {
                 try {
-                    // Set proper size for the node
                     double width = 800;
                     double height = 400;
 
@@ -329,16 +327,12 @@ public class DashboardExportService {
                         height = 400;
                     }
 
-                    // Force CSS and layout
                     node.applyCss();
                     node.resize(width, height);
 
-                    // Create snapshot parameters with white background
                     SnapshotParameters params = new SnapshotParameters();
-                    // Use Color.WHITE from javafx.scene.paint.Color
                     params.setFill(Color.WHITE);
 
-                    // Take the snapshot
                     imageHolder[0] = node.snapshot(params, null);
                 } catch (Exception e) {
                     errorHolder[0] = e;
@@ -347,7 +341,6 @@ public class DashboardExportService {
                 }
             });
 
-            // Wait for the snapshot to complete (with timeout)
             boolean completed = latch.await(3, TimeUnit.SECONDS);
 
             if (!completed) {
@@ -366,7 +359,6 @@ public class DashboardExportService {
                 return null;
             }
 
-            // Convert to byte array
             BufferedImage bufferedImage = SwingFXUtils.fromFXImage(imageHolder[0], null);
             if (bufferedImage != null) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();

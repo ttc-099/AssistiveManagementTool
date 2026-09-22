@@ -1,6 +1,7 @@
 package com.example.app.service.chartDashboard;
 
 import com.example.app.controller.MainController;
+import com.example.app.controller.DashboardController.DashboardItem;
 import org.apache.poi.xslf.usermodel.*;
 import org.apache.poi.sl.usermodel.TableCell.BorderEdge;
 import org.apache.poi.sl.usermodel.VerticalAlignment;
@@ -33,6 +34,48 @@ public class PowerPointExportService {
                 addChartSlide(ppt, chartImage, title);
             }
             addPivotTableSlide(ppt, results, title + " - Summary");
+            try (FileOutputStream out = new FileOutputStream(outputFile)) {
+                ppt.write(out);
+            }
+        }
+    }
+
+    public void exportDashboardToPPTX(List<DashboardItem> dashboardItems, File outputFile) throws IOException {
+        try (XMLSlideShow ppt = new XMLSlideShow()) {
+            // Set slide size
+            ppt.setPageSize(new java.awt.Dimension(960, 540));
+
+            for (DashboardItem item : dashboardItems) {
+                XSLFSlide slide = ppt.createSlide();
+
+                // Add title
+                XSLFTextShape titleShape = slide.createTextBox();
+                titleShape.setAnchor(new Rectangle2D.Double(50, 10, 860, 50));
+                titleShape.setFillColor(new Color(0, 51, 102));
+
+                XSLFTextParagraph titleP = titleShape.getTextParagraphs().get(0);
+                titleP.setTextAlign(org.apache.poi.sl.usermodel.TextParagraph.TextAlign.CENTER);
+                XSLFTextRun titleR = titleP.addNewTextRun();
+                titleR.setText(item.getTitle());
+                titleR.setFontColor(Color.WHITE);
+                titleR.setFontSize(20.0);
+                titleR.setBold(true);
+                titleR.setFontFamily("Arial");
+
+                // Add content as text
+                XSLFTextShape contentShape = slide.createTextBox();
+                contentShape.setAnchor(new Rectangle2D.Double(50, 70, 860, 420));
+                contentShape.setLineWidth(0);
+
+                XSLFTextParagraph contentP = contentShape.getTextParagraphs().get(0);
+                contentP.setTextAlign(org.apache.poi.sl.usermodel.TextParagraph.TextAlign.CENTER);
+                XSLFTextRun contentR = contentP.addNewTextRun();
+                contentR.setText("Item: " + item.getTitle() + "\nType: " + item.getType());
+                contentR.setFontSize(14.0);
+                contentR.setFontColor(Color.BLACK);
+                contentR.setFontFamily("Arial");
+            }
+
             try (FileOutputStream out = new FileOutputStream(outputFile)) {
                 ppt.write(out);
             }
@@ -93,7 +136,6 @@ public class PowerPointExportService {
         titleShape.setText(title);
 
         XSLFTable table = slide.createTable();
-        // Utilizing explicit layout cell margins as requested
         table.setAnchor(new Rectangle2D.Double(25, 50, 670, 450));
 
         // Create Header Row
@@ -110,7 +152,7 @@ public class PowerPointExportService {
         // Create Data Rows
         int count = 0;
         for (Map<String, String> rowData : data) {
-            if (count++ > 20) break; 
+            if (count++ > 20) break;
             XSLFTableRow row = table.addRow();
             row.setHeight(20);
             for (String column : columns) {
@@ -128,14 +170,16 @@ public class PowerPointExportService {
     }
 
     private void formatHeaderCell(XSLFTableCell cell) {
-        cell.setFillColor(new Color(0, 51, 102)); // Corporate Dark Blue
+        cell.setFillColor(new Color(0, 51, 102));
         XSLFTextParagraph p = cell.getTextParagraphs().get(0);
         p.setTextAlign(org.apache.poi.sl.usermodel.TextParagraph.TextAlign.CENTER);
-        XSLFTextRun r = p.getTextRuns().get(0);
-        r.setFontColor(Color.WHITE);
-        r.setBold(true);
-        r.setFontSize(12.0);
-        
+        if (!p.getTextRuns().isEmpty()) {
+            XSLFTextRun r = p.getTextRuns().get(0);
+            r.setFontColor(Color.WHITE);
+            r.setBold(true);
+            r.setFontSize(12.0);
+        }
+
         setBorder(cell);
         cell.setVerticalAlignment(VerticalAlignment.MIDDLE);
     }
@@ -162,30 +206,5 @@ public class PowerPointExportService {
         cell.setBorderWidth(BorderEdge.top, 0.5);
         cell.setBorderWidth(BorderEdge.left, 0.5);
         cell.setBorderWidth(BorderEdge.right, 0.5);
-    }
-
-    // Add this method to PowerPointExportService.java
-    public void exportDashboardToPPTX(List<MainController.DashboardItem> dashboardItems, File outputFile) throws IOException {
-        try (XMLSlideShow ppt = new XMLSlideShow()) {
-            // Set slide size
-            ppt.setPageSize(new java.awt.Dimension(960, 540));
-
-            for (MainController.DashboardItem item : dashboardItems) {
-                // This is a simplified version - you can enhance it
-                XSLFSlide slide = ppt.createSlide();
-                XSLFTextShape titleShape = slide.createTextBox();
-                titleShape.setAnchor(new java.awt.geom.Rectangle2D.Double(50, 10, 860, 50));
-                titleShape.setText(item.getTitle());
-
-                // Placeholder for content - in a real scenario you'd capture and add charts/tables
-                XSLFTextShape contentShape = slide.createTextBox();
-                contentShape.setAnchor(new java.awt.geom.Rectangle2D.Double(50, 70, 860, 420));
-                contentShape.setText("Item: " + item.getTitle() + "\nType: " + item.getType());
-            }
-
-            try (FileOutputStream out = new FileOutputStream(outputFile)) {
-                ppt.write(out);
-            }
-        }
     }
 }

@@ -19,7 +19,14 @@ public class CountryDrillDownController {
     @FXML private TableColumn<CourseCount, String> courseCodeCol;
     @FXML private TableColumn<CourseCount, String> courseNameCol;
     @FXML private TableColumn<CourseCount, String> intakeCol;
+    @FXML private TableColumn<CourseCount, String> applicationsCol;
+    @FXML private TableColumn<CourseCount, String> offersCol;
+    @FXML private TableColumn<CourseCount, String> acceptsCol;
     @FXML private TableColumn<CourseCount, String> countCol;
+
+    @FXML private Label totalApplicationsLabel;
+    @FXML private Label totalOffersLabel;
+    @FXML private Label totalAcceptsLabel;
 
     private CourseBreakdown breakdown;
 
@@ -31,11 +38,14 @@ public class CountryDrillDownController {
                 new SimpleStringProperty(cellData.getValue().getCourseCode()));
         courseNameCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getCourseName() != null ? cellData.getValue().getCourseName() : ""));
-
-        // ===== FIX: Get intake from the CourseCount object, not from a single display string =====
         intakeCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(cellData.getValue().getIntake()));
-
+        applicationsCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(String.valueOf(cellData.getValue().getApplications())));
+        offersCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(String.valueOf(cellData.getValue().getOffers())));
+        acceptsCol.setCellValueFactory(cellData ->
+                new SimpleStringProperty(String.valueOf(cellData.getValue().getAccepts())));
         countCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(String.valueOf(cellData.getValue().getCount())));
 
@@ -52,9 +62,13 @@ public class CountryDrillDownController {
         courseData.addAll(breakdown.getCourseCounts());
         courseTable.setItems(courseData);
 
+        // Update summary labels
         totalStudentsLabel.setText("Total Students: " + breakdown.getTotalStudents());
+        totalApplicationsLabel.setText("📝 Applications: " + breakdown.getTotalStudents());
+        totalOffersLabel.setText("✅ Offers: " + breakdown.getTotalOffers());
+        totalAcceptsLabel.setText("🎯 Acceptances: " + breakdown.getTotalAccepts());
 
-        // Hide Intake column for UGPG data (no Intake column in UGPG sheet)
+        // Hide Intake column for UGPG data
         if (!breakdown.getSheetName().equals("FY data")) {
             intakeCol.setVisible(false);
         } else {

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox fx:id="dashboardViewRoot" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.app.controller.DashboardController"
+      spacing="10">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="📊 Dashboard" style="-fx-font-size: 20; -fx-font-weight: bold;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="🗑️ Clear All" onAction="#handleClearDashboard"
+                style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Button text="📤 Export Dashboard" onAction="#handleExportDashboard"
+                style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Separator/>
+
+    <ScrollPane fx:id="dashboardScrollPane" VBox.vgrow="ALWAYS" fitToWidth="true">
+        <VBox fx:id="dashboardContainer" spacing="20" style="-fx-padding: 10;">
+            <Label text="No items added to dashboard yet. Use 'Add to Dashboard' buttons."
+                   style="-fx-font-size: 14; -fx-text-fill: #6c757d; -fx-wrap-text: true;"/>
+        </VBox>
+    </ScrollPane>
+</VBox>

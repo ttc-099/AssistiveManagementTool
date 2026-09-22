@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.collections.FXCollections?>
+<?import java.lang.Integer?>
+<VBox fx:id="aiChatViewRoot" xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.app.controller.AiChatController"
+      spacing="10" VBox.vgrow="ALWAYS">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <!-- Header -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="🧹 AI Data Cleaner" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #28a745;"/>
+        <Label fx:id="modelStatusLabel" text="● Loading..." style="-fx-font-size: 12; -fx-text-fill: #ffc107;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="clearChatBtn" text="🗑️ Clear" onAction="#handleClearChat"
+                style="-fx-base: #6c757d; -fx-text-fill: white;"/>
+    </HBox>
+
+    <Separator/>
+
+    <!-- Chat Messages Area -->
+    <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true"
+                style="-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 8;">
+        <VBox fx:id="chatContainer" spacing="8"/>
+    </ScrollPane>
+
+    <!-- ===== CLEAN CONTROLS ===== -->
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="Column:" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+        <ComboBox fx:id="columnSelector" promptText="Select column..." prefWidth="180"/>
+        <Label text="Batch:" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+        <ComboBox fx:id="batchSizeSelector" prefWidth="80">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <Integer fx:value="5"/>
+                    <Integer fx:value="10"/>
+                    <Integer fx:value="20"/>
+                    <Integer fx:value="50"/>
+                </FXCollections>
+            </items>
+        </ComboBox>
+        <Label fx:id="columnTypeLabel" text="Type: Unknown" style="-fx-font-size: 11; -fx-text-fill: #6c757d;"/>
+        <Button fx:id="cleanColumnBtn" text="🧹 Clean Column" onAction="#handleCleanColumn"
+                style="-fx-background-color: #17a2b8; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 8 16 8 16;"/>
+        <Button fx:id="cleanDataBtn" text="🧹 Clean All Rows" onAction="#handleCleanData"
+                style="-fx-background-color: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 8 16 8 16;"/>
+        <Button fx:id="terminateBtn" text="⏹️ Stop" onAction="#handleTerminate"
+                style="-fx-background-color: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 8 16 8 16;"
+                disable="true" visible="false"/>
+    </HBox>
+
+    <!-- Status Bar -->
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 5 0 0 0;">
+        <ProgressBar fx:id="aiProgressBar" prefWidth="200" visible="false" style="-fx-accent: #28a745;"/>
+        <Label fx:id="aiStatusLabel" text="Ready" style="-fx-text-fill: #6c757d; -fx-font-size: 11;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="tokenCountLabel" text="Tokens: 0" style="-fx-text-fill: #6c757d; -fx-font-size: 11;"/>
+    </HBox>
+</VBox>

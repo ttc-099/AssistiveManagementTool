@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.collections.FXCollections?>
+
+<?import java.lang.String?>
+<VBox fx:id="chartViewRoot" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.app.controller.ChartController"
+      spacing="5">
+    <padding>
+        <Insets top="5" right="10" bottom="5" left="10"/>
+    </padding>
+
+    <!-- ===== COMPACT VIEW SELECTOR ===== -->
+    <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 0 0 5 0;">
+        <Label text="📊" style="-fx-font-size: 14;"/>
+        <ComboBox fx:id="viewSelector" prefWidth="120" style="-fx-font-size: 12px;">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="Pivot Table"/>
+                    <String fx:value="Bar Chart"/>
+                    <String fx:value="Pie Chart"/>
+                </FXCollections>
+            </items>
+        </ComboBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label text="Select view" style="-fx-text-fill: #6c757d; -fx-font-size: 10px;"/>
+
+        <!-- ===== PRESET SELECTOR ===== -->
+        <HBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 0 0 5 0;">
+            <Label text="⚡" style="-fx-font-size: 14;"/>
+            <ComboBox fx:id="presetSelector" prefWidth="220" style="-fx-font-size: 12px;">
+                <items>
+                    <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Local vs International (FY)"/>
+                        <String fx:value="Local vs International (UG)"/>
+                        <String fx:value="Programme Interests (FY - Malaysian)"/>
+                        <String fx:value="Programme Interests (FY - Non-Malaysian)"/>
+                        <String fx:value="Programme Interests (UGPG - Malaysian)"/>
+                        <String fx:value="Programme Interests (UGPG - Non-Malaysian)"/>
+                    </FXCollections>
+                </items>
+            </ComboBox>
+            <Button text="▶ Apply" onAction="#handlePreset"
+                    style="-fx-base: #003366; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+        </HBox>
+
+    </HBox>
+
+    <Separator style="-fx-padding: 0 0 5 0;"/>
+
+    <!-- ===== CONTENT ===== -->
+    <StackPane VBox.vgrow="ALWAYS">
+        <!-- Pivot Table View -->
+        <VBox fx:id="pivotView" spacing="5" visible="true" managed="true">
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <ComboBox fx:id="pivotRowCombo" prefWidth="120" promptText="Rows"/>
+                <ComboBox fx:id="pivotValueCombo" prefWidth="120" promptText="Values"/>
+                <ComboBox fx:id="pivotAggCombo" prefWidth="100"/>
+                <Button text="Update" onAction="#handleUpdateDashboard"
+                        style="-fx-base: #217346; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+                <Button text="Add to Dashboard" onAction="#handleAddPivotToDashboard"
+                        style="-fx-base: #007bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+            </HBox>
+
+            <TableView fx:id="pivotTable" VBox.vgrow="ALWAYS" style="-fx-selection-bar: #cfe2f3;">
+                <columns>
+                    <TableColumn fx:id="pivotGroupCol" text="Row Labels" prefWidth="300"/>
+                    <TableColumn fx:id="pivotValueCol" text="Values" prefWidth="150"/>
+                </columns>
+                <placeholder>
+                    <Label text="Select Row, Value, and Aggregation, then click Update"
+                           style="-fx-text-fill: #6c757d; -fx-font-style: italic;"/>
+                </placeholder>
+            </TableView>
+        </VBox>
+
+        <!-- Bar Chart View -->
+        <VBox fx:id="barChartView" spacing="5" visible="false" managed="false">
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <ComboBox fx:id="barChartCategoryCombo" prefWidth="100" promptText="Category"/>
+                <ComboBox fx:id="barChartValueCombo" prefWidth="100" promptText="Value"/>
+                <ComboBox fx:id="barChartAggCombo" prefWidth="100"/>
+                <ComboBox fx:id="barChartGroupCombo" prefWidth="100"/>
+                <Button text="Update" onAction="#handleUpdateBarChart"
+                        style="-fx-base: #28a745; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+                <Button text="Add" onAction="#handleAddBarChartToDashboard"
+                        style="-fx-base: #007bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+                <Button text="Clear" onAction="#handleClearBarChart"
+                        style="-fx-base: #6c757d; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+            </HBox>
+
+            <BarChart fx:id="barChart" VBox.vgrow="ALWAYS">
+                <xAxis><CategoryAxis label="Category"/></xAxis>
+                <yAxis><NumberAxis label="Value"/></yAxis>
+            </BarChart>
+        </VBox>
+
+        <!-- Pie Chart View -->
+        <VBox fx:id="pieChartView" spacing="5" visible="false" managed="false">
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <ComboBox fx:id="pieChartCategoryCombo" prefWidth="100" promptText="Category"/>
+                <ComboBox fx:id="pieChartValueCombo" prefWidth="100" promptText="Value"/>
+                <ComboBox fx:id="pieChartAggCombo" prefWidth="100"/>
+                <Button text="Update" onAction="#handleUpdatePieChart"
+                        style="-fx-base: #dc3545; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+                <Button text="Add" onAction="#handleAddPieChartToDashboard"
+                        style="-fx-base: #007bff; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+                <Button text="Clear" onAction="#handleClearPieChart"
+                        style="-fx-base: #6c757d; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 4 12 4 12;"/>
+            </HBox>
+
+            <PieChart fx:id="pieChart" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </StackPane>
+</VBox>

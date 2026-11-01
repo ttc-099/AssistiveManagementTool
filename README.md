@@ -20,7 +20,7 @@ Built for university admissions operations: import any Excel workbook, analyse a
 Click the button — that's the whole install. Then:
 
 1. **Unzip** the folder (Windows: right-click → Extract All)
-2. **Windows:** double-click `START-WINDOWS.bat` · **macOS/Linux:** run `./start-mac-linux.sh`
+2. **Windows:** double-click `START-WINDOWS.bat` · **macOS/Linux:** run `bash start-mac-linux.sh`
 3. The first launch automatically downloads the AI model (**~1 GB, one time only**) with a progress bar, then starts the app
 
 Only requirement: **Java 21+** ([Adoptium Temurin](https://adoptium.net), free). The app itself is ~60 MB; the model streams from Hugging Face's CDN so you never handle it manually.

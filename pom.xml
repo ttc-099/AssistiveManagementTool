@@ -201,7 +201,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.example.app.MainApp</mainClass>
+                                    <mainClass>com.example.app.Launcher</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

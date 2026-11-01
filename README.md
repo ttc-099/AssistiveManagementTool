@@ -15,12 +15,24 @@ Built for university admissions operations: import any Excel workbook, analyse a
 
 ## Download
 
-**Requirements:** Java 21 or later ([Adoptium Temurin](https://adoptium.net/), free).
+[![Download](https://img.shields.io/badge/%E2%AC%87%20Download-Setup_v1.0.0-2ea44f?style=for-the-badge)](https://github.com/ttc-099/AssistiveManagementTool/releases/download/v1.0.0/AssistiveManagementTool-Setup-v1.0.0.zip)
 
-1. Download both files from the [latest release](https://github.com/ttc-099/AssistiveManagementTool/releases/latest):
-   - `AssistiveManagementTool-v1.0.0.jar` (the app, ~65 MB, self-contained for Windows / macOS / Linux)
-   - `Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (the AI model, ~1.0 GB)
-2. Put the model in an `app_models/` folder next to the jar:
+Click the button — that's the whole install. Then:
+
+1. **Unzip** the folder (Windows: right-click → Extract All)
+2. **Windows:** double-click `START-WINDOWS.bat` · **macOS/Linux:** run `./start-mac-linux.sh`
+3. The first launch automatically downloads the AI model (**~1 GB, one time only**) with a progress bar, then starts the app
+
+Only requirement: **Java 21+** ([Adoptium Temurin](https://adoptium.net), free). The app itself is ~60 MB; the model streams from Hugging Face's CDN so you never handle it manually.
+
+### Offline / manual install
+
+Prefer to download everything yourself, or installing on a machine without internet at setup time? Grab both files from the [latest release](https://github.com/ttc-099/AssistiveManagementTool/releases/latest):
+
+- `AssistiveManagementTool-v1.0.0.jar` (the app, ~65 MB, self-contained for Windows / macOS / Linux)
+- `Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (the AI model, ~1.0 GB)
+
+Put the model in an `app_models/` folder next to the jar:
 
 ```
 your-folder/
@@ -29,13 +41,13 @@ your-folder/
     └── Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
 ```
 
-3. Run it:
+Then run:
 
 ```
 java -jar AssistiveManagementTool-v1.0.0.jar
 ```
 
-The model loads in the background on first launch — the AI tab shows **Online** when it's ready. (Model file also available directly from [Qwen on Hugging Face](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF).)
+The model loads in the background on first launch — the AI tab shows **Online** when it's ready.
 
 ## Build from source
 

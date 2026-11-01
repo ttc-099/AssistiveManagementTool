@@ -19,7 +19,7 @@ bin/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
+# /dist/ (scripts ARE versioned now)
 /nbdist/
 /.nb-gradle/
 

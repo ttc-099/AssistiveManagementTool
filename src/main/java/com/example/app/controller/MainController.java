@@ -58,7 +58,8 @@ public class MainController {
 
     // ===== SERVICES =====
     private final DynamicImportService importService = new DynamicImportService();
-    private final QwenAgentService qwenService = new QwenAgentService();
+    // shared singleton: ONE model in RAM, loaded async — never construct per-controller
+    private final QwenAgentService qwenService = QwenAgentService.getInstance();
     private final PowerPointExportService exportService = new PowerPointExportService();
 
     // ================================================================

@@ -18,8 +18,23 @@ import java.util.regex.Pattern;
 
 public class QwenAgentService {
 
-    private static final String MODEL_PATH = "app_models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf";
+    private static final String MODEL_NAME = "Qwen2.5-1.5B-Instruct-Q4_K_M.gguf";
+    private static final String MODEL_DOWNLOAD_URL =
+            "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf";
     private static final String DB_PATH = "app_data/bistro_temp.db";
+
+    // ===== SINGLETON: one model in RAM, one inference lock, shared by all controllers =====
+    private static QwenAgentService instance;
+    private static final Object INFERENCE_LOCK = new Object();
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+
+    public static synchronized QwenAgentService getInstance() {
+        if (instance == null) {
+            instance = new QwenAgentService();
+        }
+        return instance;
+    }
 
     private LlamaModel model;
     private boolean isModelLoaded = false;
@@ -158,13 +173,24 @@ public class QwenAgentService {
         }
     }
 
-    // ===== CONSTRUCTOR =====
-    public QwenAgentService() {
-        loadModel();
+    // ===== CONSTRUCTOR (private — use getInstance(); model loads on a background thread) =====
+    private QwenAgentService() {
         dbManager = new DatabaseManager(DB_PATH);
         tryToLoadExistingDatabaseInfo();
         registerCleanupHook();
         buildCachedPrompts();
+        startAsyncLoad();
+    }
+
+    // ===== ASYNC LOAD: never block the JavaFX thread on model loading =====
+    private void startAsyncLoad() {
+        Thread loader = new Thread(() -> {
+            synchronized (INFERENCE_LOCK) {
+                loadModelLocked();
+            }
+        }, "qwen-model-loader");
+        loader.setDaemon(true);
+        loader.start();
     }
 
     // ===== STOP CONTROL METHODS =====
@@ -208,16 +234,16 @@ public class QwenAgentService {
         }));
     }
 
-    // ===== LOAD MODEL =====
-    private void loadModel() {
-        if (isLoading) return;
+    // ===== LOAD MODEL (callers must hold INFERENCE_LOCK) =====
+    private void loadModelLocked() {
+        if (isModelLoaded || isLoading) return;
         isLoading = true;
-
         try {
-            File modelFile = new File(MODEL_PATH);
-            if (!modelFile.exists()) {
-                System.err.println("⚠️ Qwen model not found at: " + MODEL_PATH);
-                isLoading = false;
+            File modelFile = resolveModelFile();
+            if (modelFile == null) {
+                System.err.println("❌ Qwen model not found: " + MODEL_NAME);
+                System.err.println("   Searched: app_models/, ./, user.dir/app_models/, user.home/app_models/");
+                System.err.println("   Download it (" + MODEL_DOWNLOAD_URL + ") and place it in app_models/");
                 return;
             }
 
@@ -226,7 +252,7 @@ public class QwenAgentService {
             ModelParameters modelParams = new ModelParameters();
             modelParams.setModel(modelFile.getAbsolutePath());
             modelParams.setCtxSize(8192);
-            modelParams.setThreads(4);
+            modelParams.setThreads(Math.max(4, Runtime.getRuntime().availableProcessors() / 2));
             modelParams.setBatchSize(512);
 
             long startTime = System.currentTimeMillis();
@@ -243,6 +269,23 @@ public class QwenAgentService {
         } finally {
             isLoading = false;
         }
+    }
+
+    // ===== RESOLVE MODEL FILE across the likely locations =====
+    private File resolveModelFile() {
+        String userDir = System.getProperty("user.dir", ".");
+        String userHome = System.getProperty("user.home", ".");
+        String[] candidates = {
+                "app_models/" + MODEL_NAME,
+                MODEL_NAME,
+                userDir + "/app_models/" + MODEL_NAME,
+                userHome + "/app_models/" + MODEL_NAME
+        };
+        for (String candidate : candidates) {
+            File f = new File(candidate);
+            if (f.exists() && f.length() > 1_000_000) return f;
+        }
+        return null;
     }
 
     // ===== UNLOAD MODEL =====
@@ -266,6 +309,20 @@ public class QwenAgentService {
     // ===== BUILD SYSTEM PROMPT (cached once) =====
     private String buildSystemPrompt() {
         String schemaInfo = getDatabaseSchemaInfo();
+        // derive the EXAMPLES from the real schema — hardcoded example names
+        // taught the model to hallucinate tables like "Sheet1"
+        String exTable = "the_table";
+        String exCol1 = "column1";
+        String exCol2 = "column2";
+        try {
+            String[] parts = getExampleQueryParts();
+            if (parts != null) {
+                exTable = parts[0];
+                exCol1 = parts[1];
+                exCol2 = parts[2];
+            }
+        } catch (Exception ignored) {
+        }
         return "<|im_start|>system\n" +
                 "You are Qwen, a friendly data assistant that answers questions about data in a SQLite database.\n\n" +
                 "IMPORTANT BEHAVIOR RULES:\n" +
@@ -274,29 +331,57 @@ public class QwenAgentService {
                 "3. NEVER ask for confirmation on SELECT queries - just run them and show results.\n" +
                 "4. ONLY ask for confirmation when the user explicitly says 'update', 'change', 'fix', or 'correct'.\n" +
                 "5. If the user asks to 'summarize', 'show', 'list', 'find', or 'get' - use SELECT.\n" +
-                "6. DO NOT fabricate data. Only use columns that exist in the schema.\n" +
+                "6. DO NOT fabricate data. Only use tables and columns that exist in the schema below.\n" +
                 "7. Be conversational and helpful - explain what the data shows.\n\n" +
                 "CRITICAL SQL SYNTAX RULES:\n" +
-                "1. NEVER use 'database.table' format. Use only table names like 'Sheet1'.\n" +
+                "1. NEVER use 'database.table' format. Use only table names like '" + exTable + "'.\n" +
                 "2. Column names are case-sensitive: use EXACTLY as shown in schema.\n" +
                 "3. Use double quotes around table/column names if they have spaces.\n" +
                 "4. For text values, use single quotes: 'value'\n\n" +
                 "EXAMPLE RESPONSE FORMAT:\n" +
                 "User: 'show me all names'\n" +
-                "You: \"I found 5 students in the dataset. Here are their names:\"\n" +
+                "You: \"Here are the values I found:\"\n" +
                 "```sql\n" +
-                "SELECT Surname, Given_Name FROM Sheet1;\n" +
+                "SELECT \"" + exCol1 + "\", \"" + exCol2 + "\" FROM \"" + exTable + "\";\n" +
                 "```\n\n" +
                 "User: 'update the country column'\n" +
                 "You: \"I need to confirm this update before proceeding.\"\n" +
                 "CONFIRM_UPDATE: Updating Country column...\n" +
                 "```sql\n" +
-                "UPDATE Sheet1 SET Country = 'Malaysia' WHERE Country = 'MY';\n" +
+                "UPDATE \"" + exTable + "\" SET \"Country\" = 'Malaysia' WHERE \"Country\" = 'MY';\n" +
                 "```\n\n" +
                 "DATABASE SCHEMA:\n" +
                 schemaInfo + "\n\n" +
-                "Remember: Be natural and helpful! Answer the user's question first in plain English.\n" +
+                "Remember: Be natural and helpful! Answer the user's question first in plain English. " +
+                "Only use the exact tables and columns listed in the schema.\n" +
                 "<|im_end|>\n";
+    }
+
+    // ===== FIRST TABLE + TWO REAL COLUMNS for the prompt examples =====
+    private String[] getExampleQueryParts() {
+        try (Connection conn = dbManager.getConnection()) {
+            DatabaseMetaData meta = conn.getMetaData();
+            ResultSet tables = meta.getTables(null, null, "%", new String[]{"TABLE"});
+            String table = null;
+            while (tables.next()) {
+                String t = tables.getString("TABLE_NAME");
+                if (!t.startsWith("sqlite_")) {
+                    table = t;
+                    break;
+                }
+            }
+            if (table == null) return null;
+
+            List<String> cols = new ArrayList<>();
+            ResultSet colRs = meta.getColumns(null, null, table, null);
+            while (colRs.next() && cols.size() < 2) {
+                cols.add(colRs.getString("COLUMN_NAME"));
+            }
+            while (cols.size() < 2) cols.add(cols.isEmpty() ? "column1" : "column2");
+            return new String[]{table, cols.get(0), cols.get(1)};
+        } catch (SQLException e) {
+            return null;
+        }
     }
 
     private String buildCleaningPrompt() {
@@ -333,8 +418,10 @@ public class QwenAgentService {
                     .setNPredict(1024);
 
             StringBuilder response = new StringBuilder();
-            for (LlamaOutput output : model.generate(inferParams)) {
-                response.append(output.toString());
+            synchronized (INFERENCE_LOCK) {  // llama.cpp context is not thread-safe
+                for (LlamaOutput output : model.generate(inferParams)) {
+                    response.append(output.toString());
+                }
             }
 
             String result = response.toString().trim();
@@ -363,8 +450,10 @@ public class QwenAgentService {
                     .setNPredict(1024);
 
             StringBuilder response = new StringBuilder();
-            for (LlamaOutput output : model.generate(inferParams)) {
-                response.append(output.toString());
+            synchronized (INFERENCE_LOCK) {  // llama.cpp context is not thread-safe
+                for (LlamaOutput output : model.generate(inferParams)) {
+                    response.append(output.toString());
+                }
             }
 
             return response.toString().trim();
@@ -523,31 +612,49 @@ public class QwenAgentService {
     }
 
     // ===== PARSE CLEANED BATCH =====
+    // Values may contain commas (addresses!) — parse as real JSON first, heuristic only as fallback
     private List<String> parseCleanedBatch(String response, int expectedSize) {
         List<String> values = new ArrayList<>();
         if (response == null || response.isEmpty()) return values;
 
+        int start = response.indexOf('[');
+        int end = response.lastIndexOf(']');
+        if (start != -1 && end > start) {
+            try {
+                List<?> parsed = JSON.readValue(response.substring(start, end + 1), List.class);
+                for (Object o : parsed) {
+                    values.add(o == null ? "" : o.toString());
+                }
+                if (values.size() == expectedSize) return values;
+                if (!values.isEmpty()) {
+                    // right-size: pad short responses, trim runaway ones
+                    while (values.size() < expectedSize) values.add("");
+                    return new ArrayList<>(values.subList(0, Math.min(values.size(), expectedSize)));
+                }
+            } catch (Exception e) {
+                System.out.println("   ⚠️ JSON parse failed, falling back to heuristic: " + e.getMessage());
+            }
+        }
+
+        // ===== heuristic fallback (original behaviour) =====
         try {
-            int start = response.indexOf('[');
-            int end = response.lastIndexOf(']');
-            if (start == -1 || end == -1 || end <= start) {
+            if (start != -1 && end != -1 && end > start) {
+                String json = response.substring(start + 1, end);
+                if (json.trim().isEmpty()) return values;
+
+                String[] parts = json.split(",");
+                for (String part : parts) {
+                    String cleaned = part.trim().replaceAll("^\"|\"$", "").trim();
+                    if (!cleaned.isEmpty() || values.size() < expectedSize) {
+                        values.add(cleaned);
+                    }
+                }
+            } else {
                 Pattern p = Pattern.compile("\"([^\"]*)\"");
                 Matcher m = p.matcher(response);
                 while (m.find()) values.add(m.group(1));
                 return values;
             }
-
-            String json = response.substring(start + 1, end);
-            if (json.trim().isEmpty()) return values;
-
-            String[] parts = json.split(",");
-            for (String part : parts) {
-                String cleaned = part.trim().replaceAll("^\"|\"$", "").trim();
-                if (!cleaned.isEmpty() || values.size() < expectedSize) {
-                    values.add(cleaned);
-                }
-            }
-
         } catch (Exception e) {
             System.err.println("   ⚠️ Parse error: " + e.getMessage());
         }
@@ -924,7 +1031,9 @@ public class QwenAgentService {
                     String sqlQuery = extractSQL(response);
                     if (sqlQuery != null && !sqlQuery.isEmpty()) {
                         String upperSql = sqlQuery.toUpperCase().trim();
-                        if (upperSql.startsWith("SELECT") || upperSql.startsWith("WITH") || upperSql.contains("SELECT")) {
+                        // SAFETY: only auto-run statements that START with SELECT/WITH —
+                        // never an UPDATE/DELETE that merely CONTAINS a SELECT subquery
+                        if (upperSql.startsWith("SELECT") || upperSql.startsWith("WITH")) {
                             System.out.println("⚠️ Qwen incorrectly asked for confirmation on SELECT - executing directly");
                             try {
                                 return executeAndFormatQuery(sqlQuery, userMessage);
@@ -997,15 +1106,68 @@ public class QwenAgentService {
                 }
 
                 if (sqlQuery != null && !sqlQuery.isEmpty()) {
+                    // ===== SAFETY GATE: never trust the model's CONFIRM_UPDATE marker —
+                    // inspect the statement itself. Any write statement either gates behind
+                    // user confirmation (if the user asked for a change) or is refused.
+                    if (isWriteStatement(sqlQuery)) {
+                        if (isUpdateRequest(userMessage)) {
+                            String description = extractDescription(response);
+                            String preview = getUpdatePreview(sqlQuery);
+                            pendingUpdateSQL = sqlQuery;
+                            pendingUpdateDescription = description;
+                            awaitingConfirmation = true;
+
+                            String confirmMsg = "⚠️ **I need your confirmation before making changes.**\n\n" +
+                                    "**What I plan to do:** " + description + "\n\n" +
+                                    "**Preview of changes:** " + preview + "\n\n" +
+                                    "**Affected rows:** " + getAffectedRowCount(sqlQuery) + "\n\n" +
+                                    "Type **\"Yes, apply changes\"** to confirm, or **\"Cancel\"** to abort.";
+                            return new QueryResult(
+                                    Collections.emptyList(),
+                                    Collections.emptyList(),
+                                    confirmMsg,
+                                    sqlQuery
+                            );
+                        } else {
+                            return new QueryResult(
+                                    Collections.emptyList(),
+                                    Collections.emptyList(),
+                                    "I won't modify the data — your request didn't ask for a change. " +
+                                            "If you really want to update it, ask again using the word 'update'.",
+                                    sqlQuery
+                            );
+                        }
+                    }
+
                     try {
                         return executeAndFormatQuery(sqlQuery, userMessage, naturalResponse);
                     } catch (Exception e) {
-                        String betterSql = extractSQLFromText(response);
-                        if (betterSql != null && !betterSql.isEmpty() && !betterSql.equals(sqlQuery)) {
-                            try {
-                                return executeAndFormatQuery(betterSql, userMessage, naturalResponse);
-                            } catch (Exception ex) {
-                                // Ignore
+                        // ===== ONE repair round: tell the model the error and the valid tables =====
+                        String repaired = repairQuery(sqlQuery, e.getMessage());
+                        if (repaired != null && !repaired.isEmpty() && !repaired.equalsIgnoreCase(sqlQuery)) {
+                            if (isWriteStatement(repaired) && isUpdateRequest(userMessage)) {
+                                sqlQuery = repaired;  // gate the repaired write too
+                                String description = extractDescription(response);
+                                pendingUpdateSQL = repaired;
+                                pendingUpdateDescription = description;
+                                awaitingConfirmation = true;
+                                return new QueryResult(
+                                        Collections.emptyList(),
+                                        Collections.emptyList(),
+                                        "⚠️ **I need your confirmation before making changes.**\n\n" +
+                                                "**What I plan to do:** " + description + "\n\n" +
+                                                "**Preview of changes:** " + getUpdatePreview(repaired) + "\n\n" +
+                                                "**Affected rows:** " + getAffectedRowCount(repaired) + "\n\n" +
+                                                "Type **\"Yes, apply changes\"** to confirm, or **\"Cancel\"** to abort.",
+                                        repaired
+                                );
+                            }
+                            if (!isWriteStatement(repaired)) {
+                                try {
+                                    return executeAndFormatQuery(repaired, userMessage, naturalResponse);
+                                } catch (Exception ex) {
+                                    // fall through to the error report
+                                }
                             }
                         }
                         return new QueryResult(
@@ -1206,6 +1368,49 @@ public class QwenAgentService {
         cleaned = cleaned.replaceAll("\\.\\s+", ".");
         cleaned = cleaned.replaceAll(";+$", ";");
         return cleaned;
+    }
+
+    // ===== WRITE-STATEMENT DETECTION (the real safety gate — never trust model markers) =====
+    private boolean isWriteStatement(String sql) {
+        String u = sql == null ? "" : sql.toUpperCase().trim();
+        boolean directWrite = u.startsWith("UPDATE") || u.startsWith("INSERT") || u.startsWith("DELETE")
+                || u.startsWith("ALTER") || u.startsWith("DROP") || u.startsWith("CREATE")
+                || u.startsWith("REPLACE") || u.startsWith("ATTACH") || u.startsWith("DETACH");
+        // CTE form: WITH ... UPDATE/INSERT/DELETE at the tail
+        boolean cteWrite = u.startsWith("WITH") && (u.contains(") UPDATE") || u.contains(")INSERT")
+                || u.contains(") INSERT") || u.contains(")UPDATE")
+                || u.contains(") DELETE") || u.contains(")DELETE"));
+        return directWrite || cteWrite;
+    }
+
+    // ===== ONE-SHOT QUERY REPAIR: feed the error + valid table names back to the model =====
+    private String repairQuery(String failedSql, String errorMessage) {
+        if (model == null) return null;
+        try {
+            StringBuilder tables = new StringBuilder();
+            try (Connection conn = dbManager.getConnection()) {
+                DatabaseMetaData meta = conn.getMetaData();
+                ResultSet rs = meta.getTables(null, null, "%", new String[]{"TABLE"});
+                while (rs.next()) {
+                    String t = rs.getString("TABLE_NAME");
+                    if (!t.startsWith("sqlite_")) tables.append("\"").append(t).append("\" ");
+                }
+            } catch (SQLException ignored) {
+            }
+
+            String prompt = "<|im_start|>system\nYou fix broken SQLite queries. " +
+                    "Valid tables: " + (tables.length() > 0 ? tables.toString().trim() : "(none)") + ". " +
+                    "Return ONLY the corrected SQL inside a ```sql block. No explanation.\n<|im_end|>\n" +
+                    "<|im_start|>user\nBroken query:\n```sql\n" + failedSql + "\n```\n" +
+                    "Error: " + errorMessage + "\nFix it using ONLY the valid tables above.\n<|im_end|>\n" +
+                    "<|im_start|>assistant\n";
+
+            String response = callQwenRaw(prompt);
+            String fixed = extractSQL(response);
+            return (fixed == null || fixed.isEmpty()) ? null : fixed;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String extractSQL(String response) {

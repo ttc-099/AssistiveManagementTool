@@ -16,7 +16,7 @@
 
     <!-- Header -->
     <HBox spacing="10" alignment="CENTER_LEFT">
-        <Label text="🧹 AI Data Cleaner" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #28a745;"/>
+        <Label text="🤖 AI Data Assistant" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #28a745;"/>
         <Label fx:id="modelStatusLabel" text="● Loading..." style="-fx-font-size: 12; -fx-text-fill: #ffc107;"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="clearChatBtn" text="🗑️ Clear" onAction="#handleClearChat"
@@ -30,6 +30,15 @@
                 style="-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 8;">
         <VBox fx:id="chatContainer" spacing="8"/>
     </ScrollPane>
+
+    <!-- Chat Input: ask questions about the loaded data (local Qwen → SQL → answer) -->
+    <HBox spacing="8" alignment="CENTER">
+        <TextField fx:id="chatInput" promptText="Ask about the data...  (e.g. how many rows have Country = Malaysia?)"
+                   HBox.hgrow="ALWAYS" onAction="#handleSendMessage"
+                   style="-fx-font-size: 13; -fx-padding: 8;"/>
+        <Button fx:id="sendChatBtn" text="➤ Ask" onAction="#handleSendMessage"
+                style="-fx-background-color: #1976d2; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12; -fx-padding: 8 16 8 16;"/>
+    </HBox>
 
     <!-- ===== CLEAN CONTROLS ===== -->
     <HBox spacing="10" alignment="CENTER_LEFT">

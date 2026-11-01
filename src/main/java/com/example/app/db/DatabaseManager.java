@@ -12,7 +12,6 @@ import java.sql.Statement;
 public class DatabaseManager {
 
     private final String dbPath;
-    private Connection connection;
 
     public DatabaseManager(String dbPath) {
         this.dbPath = dbPath;
@@ -31,20 +30,8 @@ public class DatabaseManager {
                 parentDir.mkdirs();
             }
 
-            // Load SQLite JDBC driver
+            // Load SQLite JDBC driver (connections open per-call in getConnection())
             Class.forName("org.sqlite.JDBC");
-
-            // Get connection
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
-
-            // Enable foreign keys
-            try (Statement stmt = connection.createStatement()) {
-                stmt.execute("PRAGMA foreign_keys = ON");
-                stmt.execute("PRAGMA journal_mode = WAL");
-                stmt.execute("PRAGMA synchronous = NORMAL");
-                stmt.execute("PRAGMA temp_store = MEMORY");
-                stmt.execute("PRAGMA cache_size = 10000");
-            }
 
             System.out.println("📂 SQLite database initialized: " + dbPath);
 
@@ -55,27 +42,29 @@ public class DatabaseManager {
     }
 
     /**
-     * Get a database connection
+     * Get a database connection.
+     * Returns a FRESH connection each call: callers own it (try-with-resources) and
+     * a shared cached connection caused races between the UI thread and background
+     * AI tasks, plus leaked setAutoCommit(false) state across features.
+     * WAL mode keeps concurrent readers safe.
      */
     public Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        Connection conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA foreign_keys = ON");
+            stmt.execute("PRAGMA journal_mode = WAL");
+            stmt.execute("PRAGMA synchronous = NORMAL");
+            stmt.execute("PRAGMA temp_store = MEMORY");
+            stmt.execute("PRAGMA cache_size = 10000");
         }
-        return connection;
+        return conn;
     }
 
     /**
-     * Close the database connection
+     * Close the legacy cached connection (kept for API compatibility; no-op now)
      */
     public void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                System.out.println("📂 SQLite connection closed");
-            }
-        } catch (SQLException e) {
-            System.err.println("⚠️ Error closing SQLite connection: " + e.getMessage());
-        }
+        // connections are opened and closed per-call by their owners now
     }
 
     /**

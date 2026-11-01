@@ -37,19 +37,28 @@ public class ExcelWorkbookService {
 
                 System.out.println(DEBUG_PREFIX + "   ✅ Found sheet: '" + targetSheet + "'");
 
-                // Evaluate formulas ONLY for this sheet
-                try {
-                    evaluator.evaluateAll();  // This will only evaluate the current sheet?
-                    // Actually evaluateAll() evaluates ALL sheets. Let's skip it.
-                } catch (Exception e) {
-                    System.out.println(DEBUG_PREFIX + "   ⚠️ Could not evaluate formulas in sheet: " + targetSheet);
-                }
-
                 SheetDataWrapper wrapper = parseSheet(sheet, targetSheet);
                 sheets.add(wrapper);
 
                 System.out.println(DEBUG_PREFIX + "   - " + wrapper.getRowCount() + " rows, " +
                         wrapper.getHeaders().size() + " columns");
+            }
+
+            // ===== FIX: fallback — import ALL visible sheets when no target sheet exists =====
+            // (previously any workbook without "FY data"/"UGPG data" imported ZERO rows,
+            //  leaving the AI agent an empty database)
+            if (sheets.isEmpty()) {
+                System.out.println(DEBUG_PREFIX + " No target sheets found — importing all sheets");
+                for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                    if (workbook.isSheetHidden(i) || workbook.isSheetVeryHidden(i)) continue;
+                    String name = workbook.getSheetName(i);
+                    SheetDataWrapper wrapper = parseSheet(workbook.getSheetAt(i), name);
+                    if (wrapper.getRowCount() > 0) {
+                        sheets.add(wrapper);
+                        System.out.println(DEBUG_PREFIX + "   - " + name + ": " +
+                                wrapper.getRowCount() + " rows, " + wrapper.getHeaders().size() + " columns");
+                    }
+                }
             }
 
             if (sheets.isEmpty()) {

@@ -56,7 +56,8 @@ public class DataController {
     @FXML private CheckBox selectAllColumnsCheckBox;
 
     // ===== SERVICES =====
-    private final QwenAgentService qwenService = new QwenAgentService();
+    // shared singleton: ONE model in RAM, loaded async — never construct per-controller
+    private final QwenAgentService qwenService = QwenAgentService.getInstance();
 
     // ===== DATA =====
     private MultiSheetModel multiSheetModel;

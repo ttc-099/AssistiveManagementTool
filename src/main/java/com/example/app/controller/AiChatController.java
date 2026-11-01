@@ -34,7 +34,12 @@ public class AiChatController implements Initializable {
     @FXML private ComboBox<Integer> batchSizeSelector;
     @FXML private Label columnTypeLabel;
 
-    private final QwenAgentService qwenService = new QwenAgentService();
+    // ===== CHAT INPUT (natural-language → SQL agent) =====
+    @FXML private javafx.scene.control.TextField chatInput;
+    @FXML private Button sendChatBtn;
+
+    // shared singleton: ONE model in RAM, loaded async — never construct per-controller
+    private final QwenAgentService qwenService = QwenAgentService.getInstance();
     private int tokenCount = 0;
     private boolean isProcessing = false;
     private DataController dataController;
@@ -94,16 +99,18 @@ public class AiChatController implements Initializable {
     private void loadModelInBackground() {
         new Thread(() -> {
             try {
-                if (!qwenService.isAvailable()) {
-                    Platform.runLater(() -> {
-                        modelStatusLabel.setText("● Loading model...");
-                        modelStatusLabel.setStyle("-fx-text-fill: #ffc107;");
-                        aiStatusLabel.setText("Loading Qwen model...");
-                    });
-
-                    Thread.sleep(2000);
-                    Platform.runLater(() -> updateModelStatus());
+                // poll until the background loader finishes (success or failure)
+                for (int i = 0; i < 240 && !qwenService.isAvailable(); i++) {
+                    if (i == 0) {
+                        Platform.runLater(() -> {
+                            modelStatusLabel.setText("● Loading model...");
+                            modelStatusLabel.setStyle("-fx-text-fill: #ffc107;");
+                            aiStatusLabel.setText("Loading Qwen model...");
+                        });
+                    }
+                    Thread.sleep(500);
                 }
+                Platform.runLater(() -> updateModelStatus());
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     modelStatusLabel.setText("● Error loading model");
@@ -111,7 +118,7 @@ public class AiChatController implements Initializable {
                     aiStatusLabel.setText("Error: " + e.getMessage());
                 });
             }
-        }).start();
+        }, "qwen-status-poller").start();
     }
 
     private void updateModelStatus() {
@@ -407,6 +414,96 @@ public class AiChatController implements Initializable {
             cleanColumnBtn.setDisable(false);
             populateColumns();
         });
+    }
+
+    // ===== CHAT: natural-language → SQL agent =====
+    @FXML
+    private void handleSendMessage() {
+        String text = chatInput.getText() == null ? "" : chatInput.getText().trim();
+        if (text.isEmpty()) return;
+
+        if (isProcessing) {
+            addSystemMessage("⏳ Please wait for the current task to finish.", "#ffc107");
+            return;
+        }
+        if (!qwenService.isAvailable()) {
+            addSystemMessage("❌ Qwen model not available (still loading, or app_models/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf is missing).", "#dc3545");
+            return;
+        }
+        if (!qwenService.hasCachedData()) {
+            addSystemMessage("❌ No data loaded — import an Excel file first.", "#dc3545");
+            return;
+        }
+
+        addUserMessage(text);
+        chatInput.clear();
+        sendChatBtn.setDisable(true);
+        isProcessing = true;
+        aiStatusLabel.setText("Thinking...");
+
+        qwenService.chat(text, null)
+                .thenAcceptAsync(result -> Platform.runLater(() -> {
+                    StringBuilder sb = new StringBuilder(result.getNaturalLanguageResponse());
+                    if (result.getSqlExecuted() != null && !result.getSqlExecuted().isEmpty()) {
+                        sb.append("\n\nSQL:\n").append(result.getSqlExecuted());
+                    }
+                    if (result.hasData()) {
+                        sb.append("\n");
+                        int shown = 0;
+                        for (Map<String, Object> row : result.getRows()) {
+                            if (shown++ >= 10) {
+                                sb.append("… ").append(result.getRows().size() - 10).append(" more rows\n");
+                                break;
+                            }
+                            StringBuilder line = new StringBuilder("• ");
+                            int i = 0;
+                            for (Object v : row.values()) {
+                                if (i++ > 0) line.append(" | ");
+                                line.append(v == null ? "null" : v.toString());
+                            }
+                            sb.append(line).append("\n");
+                        }
+                    }
+                    addAssistantMessage(sb.toString().trim());
+                    sendChatBtn.setDisable(false);
+                    isProcessing = false;
+                    aiStatusLabel.setText("Ready");
+                }))
+                .exceptionally(throwable -> {
+                    Platform.runLater(() -> {
+                        addSystemMessage("❌ Chat error: " + throwable.getMessage(), "#dc3545");
+                        sendChatBtn.setDisable(false);
+                        isProcessing = false;
+                        aiStatusLabel.setText("Ready");
+                    });
+                    return null;
+                });
+    }
+
+    private void addUserMessage(String content) {
+        HBox wrapper = new HBox();
+        wrapper.setAlignment(Pos.CENTER_RIGHT);
+        wrapper.setPadding(new Insets(5, 10, 5, 10));
+
+        VBox messageBox = new VBox(4);
+        messageBox.setMaxWidth(chatContainer.getWidth() * 0.7);
+        messageBox.setPrefWidth(chatContainer.getWidth() * 0.7);
+        messageBox.setMinWidth(100);
+        messageBox.setStyle("-fx-background-color: #1976d2; -fx-background-radius: 15 15 5 15; -fx-padding: 12;");
+
+        Label label = new Label(content);
+        label.setWrapText(true);
+        label.setStyle("-fx-text-fill: white; -fx-font-size: 13; -fx-line-spacing: 2;");
+        label.setMaxWidth(Double.MAX_VALUE);
+        messageBox.getChildren().add(label);
+
+        Label timeLabel = new Label("You • " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+        timeLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 9;");
+        messageBox.getChildren().add(timeLabel);
+
+        wrapper.getChildren().add(messageBox);
+        chatContainer.getChildren().add(wrapper);
+        scrollToBottom();
     }
 
     // ===== CLEAN COLUMN =====

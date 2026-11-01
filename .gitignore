@@ -62,3 +62,9 @@ app_models/
 **/app_models/
 *.gguf
 
+
+# local runtime artifacts (never commit databases or test scratch)
+app_data/*.db
+app_data/database_info.properties
+app_data/smoke_test.xlsx
+cp.txt

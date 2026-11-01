@@ -13,6 +13,15 @@ Built for university admissions operations: import any Excel workbook, analyse a
 - **Country / Region analytics** — analysers, drill-downs, and bulk region assignment tools
 - **Chart dashboard + PowerPoint export** — pivot-driven charts exported straight into .pptx reports
 
+## The screens
+
+| | |
+|---|---|
+| ![Table view](docs/screenshots/1-table.png) **Table.** The imported workbook as an editable grid — the Data tab everything else reads from. | ![AI chat](docs/screenshots/2-ai-chat.png) **AI Review.** Ask questions about the data in plain English; the offline Qwen agent writes and runs the SQL, and gates any change behind your confirmation. |
+| ![Dashboard](docs/screenshots/3-dashboard.png) **Dashboard.** Charts over the imported data, exportable straight to PowerPoint. | ![Tools](docs/screenshots/4-tools.png) **Additional Tools.** Region mass-adder, country/region analysers, and UA list updates. |
+
+*(Screenshots are captured from the running app by `src/test/java/com/example/app/ScreenshotHarness.java` — run `ScreenshotMain` on any machine with the model in `app_models/` and it writes all four to `docs/screenshots/`.)*
+
 ## Download
 
 [![Download](https://img.shields.io/badge/%E2%AC%87%20Download-Setup_v1.0.0-2ea44f?style=for-the-badge)](https://github.com/ttc-099/AssistiveManagementTool/releases/download/v1.0.0/AssistiveManagementTool-Setup-v1.0.0.zip)
